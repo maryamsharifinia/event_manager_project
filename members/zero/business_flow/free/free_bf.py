@@ -2,9 +2,8 @@ from hashlib import md5
 
 from helpers.business_flow_helpers import BusinessFlow
 
-import members as service
-from helpers.config_helper import ConfigHelper
 from helpers.io_helpers import *
+from members.zero.utils.utils import *
 
 
 class FreeBusinessFlowManager(BusinessFlow):
@@ -44,6 +43,10 @@ class FreeBusinessFlowManager(BusinessFlow):
 
             data = check_full_schema(data, service.clubmembers_schema)
             data = preprocess(data, schema=service.clubmembers_schema)
+            query = get_insert_check_query(data, service.clubmembers_schema)
+            if list(self.index.find(query)) != 0:
+                raise DuplicatedMember()
+
             self.index.insert_one({**data, "_id": data["phone"]})
             result = {"status": "inserted_person"}
 
