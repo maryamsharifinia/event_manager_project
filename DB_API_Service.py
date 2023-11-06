@@ -91,7 +91,7 @@ class MyBackgroundThread(plugins.SimplePlugin):
 
 def authenticate(api_key):
     cfg_helper = ConfigHelper()
-    if not cfg_helper.has_name("DB_API", api_key):
+    if not cfg_helper.has_name("DB_API", api_key + "_service"):
         return None
     service_name = cfg_helper.get_config("DB_API")[api_key + "_service"]
     return service_name
@@ -144,7 +144,7 @@ def execute_request(index, method_type, method, order_data, ip, api_key, token, 
     if config_key not in cfg_helper.config.keys():
         raise InvalidInputException("TABLE", index)
 
-    source = authenticate(api_key)
+    source = authenticate( api_key)
     if source is None:
         raise NotAuthenticatedException()
 
@@ -213,7 +213,7 @@ class NodesController(object): \
             if config_key not in cfg_helper.config.keys():
                 raise InvalidInputException("TABLE", index)
 
-            source = authenticate( api_key)
+            source = authenticate(api_key)
             if source is None:
                 raise NotAuthenticatedException()
 
@@ -244,21 +244,21 @@ class NodesController(object): \
                 redis_port = cfg_helper.get_config("DB_API")["redis_port"]
                 redis_db_number = cfg_helper.get_config("DB_API")["redis_db_number"]
 
-                free_member_id = cfg_helper.get_config("CLUBMEMBER")["free_member_id"]
-                free_token = cfg_helper.get_config("CLUBMEMBER")["free_token"]
-                free_ttl = cfg_helper.get_config("CLUBMEMBER")["free_ttl"]
+                free_member_id = cfg_helper.get_config("MEMBERS")["free_member_id"]
+                free_token = cfg_helper.get_config("MEMBERS")["free_token"]
+                free_ttl = cfg_helper.get_config("MEMBERS")["free_ttl"]
 
                 cache_db = Database(redis_host, redis_port, redis_db_number)
                 _cache = cache_db.cache("authorization_cache")
-                cache_token = _cache.get(member_id)
+                cache_token = _cache.get(str(member_id))
                 if cache_token is None:
-                    _cache.set(member_id, json.dumps({"token": token, "member_type": member_type,
+                    _cache.set(str(member_id), json.dumps({"token": token, "member_type": member_type,
                                                       "permitted_methods": permitted_methods}), ttl)
                 else:
                     cache_token = json.loads(cache_token)
                     response["data"]["token"] = cache_token["token"]
                     # response["data"]["token"] = free_token
-                    _cache.set(member_id, json.dumps(
+                    _cache.set(str(member_id), json.dumps(
                         {"token": response["data"]["token"], "member_type": cache_token["member_type"],
                          "permitted_methods": permitted_methods}), ttl)
 

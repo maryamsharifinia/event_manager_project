@@ -1,3 +1,4 @@
+from helpers.business_flow_helpers import BusinessFlow
 from helpers.config_helper import ConfigHelper
 from walrus import *
 
@@ -23,8 +24,7 @@ free_data = {"_id": "free_id",
              "category": "FREE",
              "user": "test",
              }
-import pymongo
-mongo = pymongo.MongoClient("mongodb://localhost:27017/").myclient["members"]
-mycol = mongo["member_info"]
-
+mycol =BusinessFlow(service_name="MEMBERS").create_index("member_info")
 x = mycol.insert_one(free_data)
+
+

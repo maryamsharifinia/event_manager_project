@@ -1,3 +1,5 @@
+from helpers.config_helper import ConfigHelper
+
 
 def create_message(method, record, tracking_code, broker_type, source, is_successful, member_id, size=1000, from_=0,
                    error_description=None, error_code=0, sort_by=None):
