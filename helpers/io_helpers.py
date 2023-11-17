@@ -1,4 +1,4 @@
-from helpers.communication_helpers import create_message
+from helpers.communication_helpers import create_message, create_persian_error_message
 
 
 def create_error_response(status, tracking_code, method_type, error, broker_type, source, member_id):
@@ -11,6 +11,13 @@ def create_success_response(tracking_code, method_type, response, broker_type, s
     return create_message(method=method_type, record=response, broker_type=broker_type, source=source,
                           tracking_code=tracking_code, error_code=0,
                           is_successful=True, error_description="", member_id=member_id)
+
+
+def create_exception_response(status, tracking_code, method_type, error, broker_type, source, member_id, error_persian):
+    return create_persian_error_message(method=method_type, record={}, broker_type=broker_type, source=source,
+                                        tracking_code=tracking_code, error_code=status,
+                                        is_successful=False, error_description=error, member_id=member_id,
+                                        error_persian_description=error_persian)
 
 
 def check_schema(data, schema):
@@ -61,36 +68,30 @@ def field_is_empty(field, _field_name, schema):
 
 
 class UserInputError(Exception):
-    def __init__(self, message, error_code):
+    def __init__(self, message, error_code, persian_massage=''):
         super(UserInputError, self).__init__(message)
         self.error_code = error_code
-
-
-class DependencyNotMet(UserInputError):
-    def __init__(self, message):
-        super(DependencyNotMet, self).__init__(message, 801)
+        self.persian_massage = persian_massage
 
 
 class MemberNotFoundError(UserInputError):
     def __init__(self):
-        super(MemberNotFoundError, self).__init__("INVALID member_id", 605)
+        super(MemberNotFoundError, self).__init__("INVALID member_id", 605, "کدکاربر اشتباه است")
 
 
 class RequiredFieldError(UserInputError):
     def __init__(self, field_name):
-        super(RequiredFieldError, self).__init__("Field %s is required." % field_name, 602)
+        super(RequiredFieldError, self).__init__("Field %s is required." % field_name, 602,
+                                                 "متغیر %s اجباری است ." % field_name)
 
 
 class InvalidFieldName(UserInputError):
     def __init__(self, field_name):
-        super(InvalidFieldName, self).__init__("Field %s is invalid." % field_name, 604)
-
-
-class ForumNotFoundError(UserInputError):
-    def __init__(self):
-        super(ForumNotFoundError, self).__init__("INVALID zero id", 901)
+        super(InvalidFieldName, self).__init__("Field %s is invalid." % field_name, 604,
+                                               "فیلد %s نامعتبر است." % field_name)
 
 
 class InvalidInputField(UserInputError):
     def __init__(self, field_name):
-        super(InvalidInputField, self).__init__("Invalid value for field with name '%s'" % field_name, 603)
+        super(InvalidInputField, self).__init__("Invalid value for field with name '%s'" % field_name, 603,
+                                                "مقدار نامعتبر برای فیلد با نام '%s'")
