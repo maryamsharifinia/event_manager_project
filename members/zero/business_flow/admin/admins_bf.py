@@ -44,3 +44,4 @@ class AdminBusinessFlowManager(BusinessFlow):
             check_schema(data, service.clubmembers_schema)
             data = preprocess(data, schema=service.clubmembers_schema)
             return update_member(self.index, data)
+

@@ -264,8 +264,13 @@ class NodesController(object): \
 
                 _cache.set(free_member_id, json.dumps({"token": free_token, "member_type": "FREE",
                                                        "permitted_methods": "CLUB"}), free_ttl)
-            return {"status": 200, "tracking_code": tracking_code, "method_type": method_type,
-                    "response": response}
+            if not response['is_successful']:
+                return {"status": response['error_code'],
+                        "tracking_code": tracking_code, "method_type": method_type,
+                        "response": response, 'error_description': response['error_description']}
+            else:
+                return {"status": 200, "tracking_code": tracking_code, "method_type": method_type,
+                        "response": response}
         except NotAuthenticatedException as e:
             return {"status": 401, "tracking_code": None, "method_type": method_type, "error": str(e)}
         except NotAuthorizedException as e:
@@ -331,8 +336,13 @@ class NodesController(object): \
                         {"token": None, "member_type": None,
                          "permitted_methods": None}), ttl)
 
-            return {"status": 200, "tracking_code": tracking_code, "method_type": method_type,
-                    "response": response}
+            if not response['is_successful']:
+                return {"status": response['error_code'],
+                        "tracking_code": tracking_code, "method_type": method_type,
+                        "response": response, 'error_description': response['error_description']}
+            else:
+                return {"status": 200, "tracking_code": tracking_code, "method_type": method_type,
+                        "response": response}
         except NotAuthenticatedException as e:
             return {"status": 401, "tracking_code": None, "method_type": method_type, "error": str(e)}
         except NotAuthorizedException as e:
@@ -380,8 +390,13 @@ class NodesController(object): \
                                                       order_data=order_data, ip=ip, api_key=api_key, token=token,
                                                       member_id=member_id)
 
-            return {"status": 200, "tracking_code": tracking_code, "method_type": method_type,
-                    "response": response}
+            if not response['is_successful']:
+                return {"status": response['error_code'],
+                        "tracking_code": tracking_code, "method_type": method_type,
+                        "response": response, 'error_description': response['error_description']}
+            else:
+                return {"status": 200, "tracking_code": tracking_code, "method_type": method_type,
+                        "response": response}
         except NotAuthenticatedException as e:
             return {"status": 401, "tracking_code": None, "method_type": method_type, "error": str(e)}
         except NotAuthorizedException as e:
@@ -425,8 +440,13 @@ class NodesController(object): \
                                                       order_data=order_data, ip=ip, api_key=api_key, token=token,
                                                       member_id=member_id)
 
-            return {"status": 200, "tracking_code": tracking_code, "method_type": method_type,
-                    "response": response}
+            if not response['is_successful']:
+                return {"status": response['error_code'],
+                        "tracking_code": tracking_code, "method_type": method_type,
+                        "response": response, 'error_description': response['error_description']}
+            else:
+                return {"status": 200, "tracking_code": tracking_code, "method_type": method_type,
+                        "response": response}
         except NotAuthenticatedException as e:
             return {"status": 401, "tracking_code": None, "method_type": method_type, "error": str(e)}
         except NotAuthorizedException as e:
@@ -466,8 +486,13 @@ class NodesController(object): \
                                                       order_data=order_data, ip=ip, api_key=api_key, token=token,
                                                       member_id=member_id)
 
-            return {"status": 200, "tracking_code": tracking_code, "method_type": method_type,
-                    "response": response}
+            if not response['is_successful']:
+                return {"status": response['error_code'],
+                        "tracking_code": tracking_code, "method_type": method_type,
+                        "response": response, 'error_description': response['error_description']}
+            else:
+                return {"status": 200, "tracking_code": tracking_code, "method_type": method_type,
+                        "response": response}
         except NotAuthenticatedException as e:
             return {"status": 401, "tracking_code": None, "method_type": method_type, "error": str(e)}
         except NotAuthorizedException as e:
@@ -509,8 +534,13 @@ class NodesController(object): \
                                                       order_data=order_data, ip=ip, api_key=api_key, token=token,
                                                       member_id=member_id)
 
-            return {"status": 200, "tracking_code": tracking_code, "method_type": method_type,
-                    "response": response}
+            if not response['is_successful']:
+                return {"status": response['error_code'],
+                        "tracking_code": tracking_code, "method_type": method_type,
+                        "response": response, 'error_description': response['error_description']}
+            else:
+                return {"status": 200, "tracking_code": tracking_code, "method_type": method_type,
+                        "response": response}
 
         except NotAuthenticatedException as e:
             return {"status": 401, "tracking_code": None, "method_type": method_type, "error": str(e)}

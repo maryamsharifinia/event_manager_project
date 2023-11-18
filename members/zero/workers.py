@@ -121,11 +121,18 @@ class MembersInsertWorker(MembersWorker):
                                              member_id=request["member_id"])
 
         except UserInputError as e:
-            response = create_error_response(status=e.error_code, tracking_code=request["tracking_code"],
-                                             method_type=request["method"], error=str(e),
-                                             broker_type=request["broker_type"],
-                                             source=request["source"],
-                                             member_id=request["member_id"])
+
+            response = create_exception_response(status=e.error_code, tracking_code=request["tracking_code"],
+
+                                                 method_type=request["method"], error=str(e),
+
+                                                 broker_type=request["broker_type"],
+
+                                                 source=request["source"],
+
+                                                 member_id=request["member_id"],
+
+                                                 error_persian=e.persian_massage)
 
         except Exception:
             error = f"Exception\n{traceback.format_exc()}"

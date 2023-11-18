@@ -32,7 +32,7 @@ class FreeBusinessFlowManager(BusinessFlow):
         data = data['data']
 
         if request["method"] == "register":
-            check_required_key(['password_confirm', 'password'], data)
+            check_required_key(['password_confirm', 'password', "user", "phone","email"], data)
             data["phone"] = (data["phone"]).replace(" ", "")
             data["email"] = data["email"]
             new_pass = data["password"]
