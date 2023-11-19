@@ -7,7 +7,8 @@ from helpers.config_helper import ConfigHelper
 from helpers.io_helpers import *
 from helpers.multiplexer import Multiplexer
 
-import members as service
+import events as service
+from members import get_member, service_name as member_service
 
 
 class EventsWorker:
@@ -15,8 +16,7 @@ class EventsWorker:
         super(EventsWorker, self).__init__()
         self.cfg_helper = ConfigHelper()
         self.mongo = pymongo.MongoClient("mongodb://localhost:27017/").myclient[service.service_name]
-        self.login_bf = service.LoginBusinessFlowManager()
-        self.logout_bf = service.LogoutBusinessFlowManager()
+        self.mongo_members = pymongo.MongoClient("mongodb://localhost:27017/").myclient[member_service]
         self.user_bf = service.UserBusinessFlowManager()
         self.admin_bf = service.AdminBusinessFlowManager()
         self.free_bf = service.FreeBusinessFlowManager()
@@ -72,7 +72,7 @@ class EventsSelectWorker(EventsWorker):
 
     def business_flow(self, data, request):
         request_sender_id = request["member_id"]
-        request_sender_member = service.get_member(mongo=self.mongo, request_sender_id=request_sender_id)
+        request_sender_member = get_member(mongo=self.mongo_members, request_sender_id=request_sender_id)
 
         source = request["source"]
 
@@ -138,7 +138,7 @@ class EventsInsertWorker(EventsWorker):
 
     def business_flow(self, data, request):
         request_sender_id = request["member_id"]
-        request_sender_member = service.get_member(mongo=self.mongo, request_sender_id=request_sender_id)
+        request_sender_member = get_member(mongo=self.mongo_members, request_sender_id=request_sender_id)
 
         source = request["source"]
 
@@ -209,7 +209,7 @@ class EventsDeleteWorker(EventsWorker):
 
     def business_flow(self, data, request):
         request_sender_id = request["member_id"]
-        request_sender_member = service.get_member(mongo=self.mongo, request_sender_id=request_sender_id)
+        request_sender_member = get_member(mongo=self.mongo_members, request_sender_id=request_sender_id)
 
         source = request["source"]
 
@@ -276,7 +276,7 @@ class EventsUpdateWorker(EventsWorker):
 
     def business_flow(self, data, request):
         request_sender_id = request["member_id"]
-        request_sender_member = service.get_member(mongo=self.mongo, request_sender_id=request_sender_id)
+        request_sender_member = get_member(mongo=self.mongo_members, request_sender_id=request_sender_id)
 
         source = request["source"]
 

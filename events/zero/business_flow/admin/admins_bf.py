@@ -40,12 +40,24 @@ class AdminBusinessFlowManager(BusinessFlow):
         method = request["method"]
 
         if method == "insert_event":
-            check_required_key([], data)
+            check_required_key(["Name",
+                                "registration_start_date",
+                                "registration_end_date",
+                                "start_date",
+                                "end_date",
+                                "hours",
+                                "subject",
+                                "teacher_name",
+                                "platform",
+                                "image"], data)
             if 'image' in data:
                 image_id = self.insert_file(service.service_name, data['image']['file_content'],
                                             data['image']['file_type'],
                                             member["_id"] + "@" + datetime.datetime.now().strftime(
                                                 "%Y%m%d_%H:%M:%S.%f"))
+                image_id = image_id.inserted_id
+            else:
+                image_id = None
             data = check_full_schema(data, service.event_schema)
             data = preprocess(data, schema=service.event_schema)
             data['image'] = image_id

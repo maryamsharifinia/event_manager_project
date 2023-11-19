@@ -1,7 +1,7 @@
 from helpers.config_helper import ConfigHelper
 
 cfg_helper = ConfigHelper()
-service_name = "MEMBERS"
+service_name = "EVENTS"
 
 from events.zero.workers import *
 from events.zero.business_flow.admin.admins_bf import *

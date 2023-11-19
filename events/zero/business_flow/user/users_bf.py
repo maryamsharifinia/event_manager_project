@@ -1,7 +1,7 @@
 from helpers.business_flow_helpers import BusinessFlow
 from helpers.config_helper import ConfigHelper
 
-import members as service
+import events as service
 
 
 class UserBusinessFlowManager(BusinessFlow):
