@@ -32,6 +32,17 @@ def check_schema(data, schema):
         raise InvalidFieldName(invalid_field_name)
 
 
+def preprocess_schema(data, schema):
+    for field in list(data.keys()):
+        if field == "_id":
+            continue
+        if field not in schema.keys():
+            invalid_field_name = field
+            del data[invalid_field_name]
+
+    return data
+
+
 def check_full_schema(data, schema):
     schema_keys = set(schema.keys())
 

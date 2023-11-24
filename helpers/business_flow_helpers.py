@@ -41,4 +41,4 @@ class BusinessFlow:
         mydb = self.mongo['files']
         mycol = mydb[raw_index_name]
         myquery = {"_id": _id}
-        return list(mycol.find(myquery))
+        return list(mycol.find(myquery))[0]

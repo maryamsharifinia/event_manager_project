@@ -2,12 +2,14 @@ from helpers.business_flow_helpers import BusinessFlow
 from helpers.config_helper import ConfigHelper
 
 import members as service
+from helpers.io_helpers import *
 
 
 class UserBusinessFlowManager(BusinessFlow):
     def __init__(self, ):
         super(UserBusinessFlowManager, self).__init__(service.service_name)
         self.cfg_helper = ConfigHelper()
+        self.index = self.create_index(self.cfg_helper.get_config(service.service_name)["index_name"])
 
     def select_business_flow(self, data, request, member, params=None):
         self.get_mongo_connection()

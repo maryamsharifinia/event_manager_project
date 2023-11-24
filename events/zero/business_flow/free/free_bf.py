@@ -1,7 +1,7 @@
-
 from helpers.business_flow_helpers import BusinessFlow
 from events.zero.utils.utils import *
 import events as service
+from helpers.io_helpers import *
 
 
 class FreeBusinessFlowManager(BusinessFlow):
@@ -16,13 +16,28 @@ class FreeBusinessFlowManager(BusinessFlow):
         self.get_mongo_connection()
 
         method = request["method"]
+        data = data["data"]
+        if method == "select_event":
+            sort = "DC_CREATE_TIME"
+            sort_type = 1
+            if "sort" in data:
+                sort = data["sort"]["name"]
+                sort_type = data["sort"]["type"]
+            from_value = int(data.get('from', 0))
+            to_value = int(data.get('to', 10))
 
-        if method == "select":
-            pass
+            query = preprocess_schema(data, schema=service.event_schema)
+            total = len(list(self.index.find(query)))
+
+            search_result = list(self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+            for item in search_result:
+                if item["image"] not in ['null', None, "None"]:
+                    item["image"] = self.serve_file(service.service_name, item["image"])
+
+            results = {"total": total, "result": list(search_result)}
         else:
             raise PermissionError()
 
-        results = []
         return results
 
     def insert_business_flow(self, data, request, member, params=None):
