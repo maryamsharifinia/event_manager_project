@@ -39,6 +39,10 @@ class FreeBusinessFlowManager(BusinessFlow):
             new_pass_confirm = data["password_confirm"]
             if new_pass != new_pass_confirm:
                 raise PermissionError()
+
+            if len(re.findall('^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])[A-Za-z0-9@#$%^&+=\!\*]{8,}$', new_pass)) == 0:
+                raise InvalidPasswordStructure()
+
             md5_password = md5(new_pass.encode()).hexdigest().upper()
             data["pass_salt"], data["pass_hash"] = service.create_salt_and_hash(md5_password)
 
