@@ -14,6 +14,8 @@ clubmembers_schema = {
     "pass_hash": {"_type": str, "_null_value": "null", "_check_in_insert": False},
     "phone": {"_type": str, "_null_value": "null", "_check_in_insert": True},
     "email": {"_type": str, "_null_value": "null", "_check_in_insert": False},
+    "verify_email": {"_type": str, "_null_value": "FALSE", "_check_in_insert": False},
+    "verify_phone": {"_type": str, "_null_value": "FALSE", "_check_in_insert": False},
     "registration_date": {"_type": str, "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS",
                           "_null_value": "1970/01/01 00:00:00.000000",
                           "_check_in_insert": False},

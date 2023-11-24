@@ -130,8 +130,8 @@ def set_new_password(new_password, member_id, mongo):
     md5_password = md5(new_password.encode()).hexdigest().upper()
     pass_salt, pass_hash = create_salt_and_hash(md5_password)
     update_body = {
-                "pass_salt": pass_salt,
-                "pass_hash": pass_hash
+        "pass_salt": pass_salt,
+        "pass_hash": pass_hash
 
     }
     myquery = {"_id": member_id}
@@ -144,18 +144,19 @@ def set_new_password(new_password, member_id, mongo):
 
 
 def send_email(data, display_name):
-    smtp_server = "mrymshrfi"
-    smtp_password = "nosyBP(&Wbp749"
-    smtp_email = "credit@pouyanbroker.ir"
-    target_email = data["receiver_id"]
+    smtp_server = "smtp.gmail.com"
+    smtp_password = "zhdx nlys gxsk ffqa"
+    smtp_email = "scientificsocietyiust@gmail.com"
+
+    target_email = data["email"]
     if target_email is None or target_email == "" or len(re.findall("^(\w|\.|\_|\-)+[@](\w|\_|\-|\.)+[.]\w{2,3}$",
                                                                     target_email)) == 0:
         raise Exception("EMAIL_NOT_SENT: INVALID EMAIL ADDRESS")
 
-    with smtplib.SMTP(host=smtp_server, timeout=10) as server:
-        server.login(smtp_email, smtp_password)
+    with smtplib.SMTP_SSL(host=smtp_server, port=465, timeout=10) as server:
+        server.login("scientificsocietyiust@gmail.com", "zhdx nlys gxsk ffqa")
 
-        name = data["name"]
+        name = "انجمن علمی دانشگاه علم و صنعت"
         content = data["content"]
 
         from_header = Header(display_name, "utf-8")
@@ -167,7 +168,7 @@ def send_email(data, display_name):
         msg["From"] = from_header
         msg['To'] = "<%s>" % target_email
 
-        html = get_email_body(content)
+        html = get_email_body(content, name)
 
         mime_text = MIMEText(html, 'html', "utf-8")
 
@@ -181,8 +182,7 @@ def send_email(data, display_name):
             raise Exception("EMAIL_NOT_SENT")
 
 
-def get_email_body(content):
-    cfg_helper = ConfigHelper()
+def get_email_body(content, broker_name):
     return """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns=" http://www.w3.org/1999/xhtml">
@@ -192,7 +192,7 @@ def get_email_body(content):
     <meta name="viewport" content="width=device-width" />
 
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>{}</title>""".format(cfg_helper.get_config("DEFAULT")["broker_name"]) + """<style>
+    <title>{}</title>""".format(broker_name) + """<style>
         /* ------------------------------------- 
 GLOBAL 
 ------------------------------------- */
@@ -591,7 +591,7 @@ Nothing fancy.
             </td>
             <td></td>
         </tr>
-    </table><!-- /HEADER -->""".format(cfg_helper.get_config("DEFAULT")["broker_name"]) + """
+    </table><!-- /HEADER -->""".format(broker_name) + """
 
 
     <!-- BODY -->
@@ -658,7 +658,19 @@ Nothing fancy.
 -->
 </body>
 
-</html>""".format(cfg_helper.get_config("DEFAULT")["broker_name"])
+</html>""".format(broker_name)
+
+
+def check_otp(type, data, db):
+    otp_cache = db.cache("otp")
+    check_result = {"check": False}
+    cache_data = otp_cache.get(data.get(type))
+    if str(cache_data) in ["", "None", "null"]:
+        return check_result
+    correct = json.loads(str(cache_data))
+    if int(correct["correct"]) == int(data["otp"]):
+        check_result["check"] = True
+    return check_result
 
 
 class IncorrectLoginData(UserInputError):
@@ -694,3 +706,13 @@ class InvalidPasswordStructure(UserInputError):
         error_code_base = int(cfg_helper.get_config("CUSTOM_ERROR_CODES")["members"])
         super(InvalidPasswordStructure, self).__init__(message="Password structure is invalid",
                                                        error_code=error_code_base + 104)
+
+
+class InvalidOtp(UserInputError):
+    def __init__(self):
+        cfg_helper = ConfigHelper()
+        error_code_base = int(cfg_helper.get_config("CUSTOM_ERROR_CODES")["members"])
+        super(InvalidOtp, self).__init__(message="invalid otp",
+                                         error_code=error_code_base + 106,
+                                         persian_massage="کد وارد شده اشتباه وارد شده است."
+                                         )

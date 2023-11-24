@@ -50,6 +50,9 @@ class AdminBusinessFlowManager(BusinessFlow):
                                 "teacher_name",
                                 "platform",
                                 "image"], data)
+            query = get_insert_check_query(data, service.event_schema)
+            if len(list(self.index.find(query))) != 0:
+                raise DuplicatedEvent()
             if 'image' in data:
                 image_id = self.insert_file(service.service_name, data['image']['file_content'],
                                             data['image']['file_type'],
@@ -61,9 +64,7 @@ class AdminBusinessFlowManager(BusinessFlow):
             data = check_full_schema(data, service.event_schema)
             data = preprocess(data, schema=service.event_schema)
             data['image'] = image_id
-            query = get_insert_check_query(data, service.event_schema)
-            if list(self.index.find(query)) != 0:
-                raise DuplicatedEvent()
+
 
             self.index.insert_one({**data, "_id": data["phone"]})
             results = {"status": "inserted_event"}
