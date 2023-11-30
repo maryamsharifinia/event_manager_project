@@ -145,7 +145,7 @@ def set_new_password(new_password, member_id, mongo):
 
 def send_email(data, display_name):
     smtp_server = "smtp.gmail.com"
-    smtp_password = "zhdx nlys gxsk ffqa"
+    smtp_password = "yqjn nssh cykb ztej"
     smtp_email = "scientificsocietyiust@gmail.com"
 
     target_email = data["email"]
@@ -154,7 +154,7 @@ def send_email(data, display_name):
         raise Exception("EMAIL_NOT_SENT: INVALID EMAIL ADDRESS")
 
     with smtplib.SMTP_SSL(host=smtp_server, port=465, timeout=10) as server:
-        server.login("scientificsocietyiust@gmail.com", "zhdx nlys gxsk ffqa")
+        server.login(smtp_email, smtp_password)
 
         name = "انجمن علمی دانشگاه علم و صنعت"
         content = data["content"]
@@ -580,8 +580,6 @@ Nothing fancy.
                 <div class="content" style="background-color: #d3d3d3;">
                     <table background-color="#999999">
                         <tr>
-                            <td><img src="https://www.mobinsb.ir/Content/Intro/img/logo-lw.png" /></td>
-<td align=" left">
                                 <h6 class="collapse">{}</h6>
                             </td>
                         </tr>
