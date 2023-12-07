@@ -1,3 +1,7 @@
+import json
+
+from events.zero.utils.utils import *
+from events.zero.utils.utils import register_event as reg
 from helpers.business_flow_helpers import BusinessFlow
 from helpers.config_helper import ConfigHelper
 
@@ -11,6 +15,8 @@ class UserBusinessFlowManager(BusinessFlow):
         self.cfg_helper = ConfigHelper()
 
         self.index = self.create_index(self.cfg_helper.get_config(service.service_name)["index_name"])
+        self.index_register = self.create_index(
+            self.cfg_helper.get_config(service.service_name)["index_name_register_event"])
 
     def select_business_flow(self, data, request, member, params=None):
         self.get_mongo_connection()
@@ -41,15 +47,58 @@ class UserBusinessFlowManager(BusinessFlow):
 
     def insert_business_flow(self, data, request, member, params=None):
         self.get_mongo_connection()
-
+        data = data["data"]
         method = request["method"]
-        if method == "insert":
-            pass
+
+        if method == "register_event":
+            if "_id" not in data.keys():
+                raise RequiredFieldError("_id")
+            event_id = data['_id']
+            event_info = get_event_by_id(self.mongo, event_id)
+            ticket_types = json.loads(event_info['ticket_type'])
+            ticket_type = "1" if "ticket_type" not in data.keys() else data["ticket_type"]
+
+            if ticket_types[ticket_type]['participants'] >= ticket_types[ticket_type]['max_participants']:
+                raise CapacityError()
+
+            cost = ticket_types[ticket_type]['cost']
+            name = event_info['name']
+            mobile = event_info['phone']
+            email = event_info['email']
+
+            if cost > 0:
+                return send_request(amount=cost,
+                                    description=f' خرید دوره{name}',
+                                    email=email,
+                                    mobile=mobile)
+
+
+            else:
+                register_event = reg(event_info=event_info, mongo_register_event=self.index_register,
+                                     member=member, registration_event_schema=service.registration_event_schema)
+            return register_event
+
+        elif method == "verify_payment":
+            event_id = data['_id']
+            event_info = get_event_by_id(self.mongo, event_id)
+            ticket_types = json.loads(event_info['ticket_type'])
+            ticket_type = "1" if "ticket_type" not in data.keys() else data["ticket_type"]
+
+            if ticket_types[ticket_type]['participants'] >= ticket_types[ticket_type]['max_participants']:
+                raise CapacityError()
+
+            cost = ticket_types[ticket_type]['cost']
+
+            status = verify(cost, data)
+            if status == 200:
+                register_event = reg(event_info=event_info, mongo_register_event=self.index_register,
+                                     member=member, registration_event_schema=service.registration_event_schema)
+            else:
+                raise PaymentFailed()
+            return register_event
 
         else:
             raise PermissionError()
-
-        return []
 
     def delete_business_flow(self, data, request, member, params=None):
         raise PermissionError()

@@ -25,9 +25,22 @@ class UserBusinessFlowManager(BusinessFlow):
         method = request["method"]
 
         if method == "select":
-            pass
+            sort = "DC_CREATE_TIME"
+            sort_type = 1
+            if "sort" in data:
+                sort = data["sort"]["name"]
+                sort_type = data["sort"]["type"]
+            from_value = int(data.get('from', 0))
+            to_value = int(data.get('to', 10))
 
-        return {}
+            query = preprocess_schema(data, schema=service.clubmembers_schema)
+            total = len(list(self.index.find(query)))
+
+            search_result = list(self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+
+            results = {"total": total, "result": list(search_result)}
+
+        return results
 
     def insert_business_flow(self, data, request, member, params=None):
         self.get_mongo_connection()
@@ -49,6 +62,9 @@ class UserBusinessFlowManager(BusinessFlow):
         result = {}
         data = data['data']
         if request["method"] == "update":
+            if 'email' in data.keys():
+                data['verify_email'] = "FALSE"
+
             check_schema(data, service.clubmembers_schema)
             data = preprocess(data, schema=service.clubmembers_schema)
 
@@ -56,7 +72,6 @@ class UserBusinessFlowManager(BusinessFlow):
         elif request["method"] == "change_password":
             check_required_key(["member_id", "old_password", "new_password"], data)
             result = change_password(data, member, self.index)
-
         elif request["method"] == "verify_email":
             otp_catch = self.db.cache("otp")
             otp = random.randint(1000, 9999)

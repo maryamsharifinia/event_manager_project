@@ -16,6 +16,8 @@ class AdminBusinessFlowManager(BusinessFlow):
 
         self.cfg_helper = ConfigHelper()
         self.index = self.create_index(self.cfg_helper.get_config(service.service_name)["index_name"])
+        self.index_register = self.create_index(
+            self.cfg_helper.get_config(service.service_name)["index_name_register_event"])
 
     # noinspection PyUnusedLocal
     def select_business_flow(self, data, request, member, params=None):
@@ -23,10 +25,41 @@ class AdminBusinessFlowManager(BusinessFlow):
 
         method = request["method"]
 
-        if method == "select":
-            pass
-        elif method == "selec_active":
-            pass
+        if method == "select_in_registration":
+            sort = "DC_CREATE_TIME"
+            sort_type = 1
+            if "sort" in data:
+                sort = data["sort"]["name"]
+                sort_type = data["sort"]["type"]
+            from_value = int(data.get('from', 0))
+            to_value = int(data.get('to', 10))
+
+            query = preprocess_schema(data, schema=service.event_schema)
+            total = len(list(self.index_register.find(query)))
+
+            search_result = list(
+                self.index_register.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+
+            results = {"total": total, "result": list(search_result)}
+        elif method == "select_in_events":
+            sort = "DC_CREATE_TIME"
+            sort_type = 1
+            if "sort" in data:
+                sort = data["sort"]["name"]
+                sort_type = data["sort"]["type"]
+            from_value = int(data.get('from', 0))
+            to_value = int(data.get('to', 10))
+
+            query = preprocess_schema(data, schema=service.event_schema)
+            total = len(list(self.index.find(query)))
+
+            search_result = list(
+                self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+            for item in search_result:
+                if item["image"] not in ['null', None, "None"]:
+                    item["image"] = self.serve_file(service.service_name, item["image"])
+
+            results = {"total": total, "result": list(search_result)}
         else:
             raise PermissionError()
 
@@ -65,7 +98,6 @@ class AdminBusinessFlowManager(BusinessFlow):
             data = preprocess(data, schema=service.event_schema)
             data['image'] = image_id
 
-
             self.index.insert_one({**data, "_id": data["phone"]})
             results = {"status": "inserted_event"}
         elif method == "selec_active":
@@ -79,4 +111,24 @@ class AdminBusinessFlowManager(BusinessFlow):
         raise PermissionError()
 
     def update_business_flow(self, data, request, member, params=None):
-        raise PermissionError()
+        self.get_mongo_connection()
+        data = data['data']
+        method = request["method"]
+
+        if method == "update_event":
+            if 'image' in data:
+                image_id = self.insert_file(service.service_name, data['image']['file_content'],
+                                            data['image']['file_type'],
+                                            member["_id"] + "@" + datetime.datetime.now().strftime(
+                                                "%Y%m%d_%H:%M:%S.%f"))
+                image_id = image_id.inserted_id
+            else:
+                image_id = None
+
+            data['image'] = image_id
+
+            check_schema(data, service.event_schema)
+            data = preprocess(data, schema=service.event_schema)
+
+            result = update_event(data, member)
+            return result
