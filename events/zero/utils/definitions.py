@@ -5,7 +5,7 @@ event_schema = {"broker_type": {"_type": str, "_null_value": "null", "_check_in_
                 "is_active": {"_type": str, "_null_value": "TRUE", "_check_in_insert": False},
                 "external_links": {"_type": str, "_null_value": "null", "_check_in_insert": False},
 
-                "ticket_type": {"_type": list, "_null_value": json.dumps(
+                "ticket_type": {"_type": dict, "_null_value": json.dumps(
                     {"1": {"cost": 0,
                            "name": 0,
                            "participants": 0,

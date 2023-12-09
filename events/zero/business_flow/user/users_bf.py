@@ -55,16 +55,26 @@ class UserBusinessFlowManager(BusinessFlow):
                 raise RequiredFieldError("_id")
             event_id = data['_id']
             event_info = get_event_by_id(self.mongo, event_id)
-            ticket_types = json.loads(event_info['ticket_type'])
+            ticket_types = event_info['ticket_type']
+
+            query = get_insert_check_query({"event_id": event_id, "member_id": member["_id"]},
+                                           service.registration_event_schema)
+            if len(list(self.index_register.find(query))) != 0:
+                raise DuplicatedRegister()
+
             ticket_type = "1" if "ticket_type" not in data.keys() else data["ticket_type"]
+
+            if "participants" not in ticket_types[ticket_type]:
+                ticket_types[ticket_type]['participants'] = 0
 
             if ticket_types[ticket_type]['participants'] >= ticket_types[ticket_type]['max_participants']:
                 raise CapacityError()
 
             cost = ticket_types[ticket_type]['cost']
+
             name = event_info['name']
-            mobile = event_info['phone']
-            email = event_info['email']
+            mobile = member['phone']
+            email = member['email']
 
             if cost > 0:
                 return send_request(amount=cost,
@@ -76,6 +86,10 @@ class UserBusinessFlowManager(BusinessFlow):
             else:
                 register_event = reg(event_info=event_info, mongo_register_event=self.index_register,
                                      member=member, registration_event_schema=service.registration_event_schema)
+                myquery = {"_id": event_id}
+                ticket_types[ticket_type]['participants'] += 1
+                newvalues = {"$set": {"ticket_type": ticket_types}}
+                self.index.update_one(myquery, newvalues)
             return register_event
 
         elif method == "verify_payment":
@@ -84,6 +98,8 @@ class UserBusinessFlowManager(BusinessFlow):
             ticket_types = json.loads(event_info['ticket_type'])
             ticket_type = "1" if "ticket_type" not in data.keys() else data["ticket_type"]
 
+            if "participants" not in ticket_types[ticket_type]:
+                ticket_types[ticket_type]['participants'] = 0
             if ticket_types[ticket_type]['participants'] >= ticket_types[ticket_type]['max_participants']:
                 raise CapacityError()
 
@@ -93,6 +109,10 @@ class UserBusinessFlowManager(BusinessFlow):
             if status == 200:
                 register_event = reg(event_info=event_info, mongo_register_event=self.index_register,
                                      member=member, registration_event_schema=service.registration_event_schema)
+                myquery = {"_id": event_id}
+                ticket_types[ticket_type]['participants'] += 1
+                newvalues = {"$set": {"ticket_type": ticket_types}}
+                self.index.update_one(myquery, newvalues)
             else:
                 raise PaymentFailed()
             return register_event

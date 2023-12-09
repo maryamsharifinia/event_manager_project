@@ -98,7 +98,8 @@ class AdminBusinessFlowManager(BusinessFlow):
             data = preprocess(data, schema=service.event_schema)
             data['image'] = image_id
 
-            self.index.insert_one({**data, "_id": data["phone"]})
+            self.index.insert_one({**data, "_id":  member["_id"] + "@" + datetime.datetime.now().strftime(
+                                                "%Y%m%d_%H:%M:%S.%f")})
             results = {"status": "inserted_event"}
         elif method == "selec_active":
             pass
