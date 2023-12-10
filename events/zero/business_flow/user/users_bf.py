@@ -105,10 +105,16 @@ class UserBusinessFlowManager(BusinessFlow):
 
             cost = ticket_types[ticket_type]['cost']
 
-            status = verify(cost, data)
-            if status == 200:
+            res = verify(cost, data['authority'])
+            status = res['status']
+            if status == 100 or status == 101:
+                query = get_insert_check_query({"event_id": event_id, "member_id": member["_id"]},
+                                               service.registration_event_schema)
+                if len(list(self.index_register.find(query))) != 0:
+                    raise DuplicatedRegister()
                 register_event = reg(event_info=event_info, mongo_register_event=self.index_register,
                                      member=member, registration_event_schema=service.registration_event_schema)
+                register_event = {**register_event, **res}
                 myquery = {"_id": event_id}
                 ticket_types[ticket_type]['participants'] += 1
                 newvalues = {"$set": {"ticket_type": ticket_types}}

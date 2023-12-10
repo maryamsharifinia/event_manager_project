@@ -1,10 +1,8 @@
 from helpers.config_helper import ConfigHelper
 from helpers.io_helpers import *
-from flask import url_for, redirect
+import requests
 
-from suds.client import Client
-
-MMERCHANT_ID = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'
+MMERCHANT_ID = '1344b5d4-0048-11e8-94db-005056a205be'
 ZARINPAL_WEBSERVICE = 'https://www.zarinpal.com/pg/services/WebGate/wsdl'
 
 
@@ -66,35 +64,45 @@ def send_request(amount,
                  description,
                  email,
                  mobile, ):
-    client = Client(ZARINPAL_WEBSERVICE)
-    result = client.service.PaymentRequest(MMERCHANT_ID,
-                                           amount,
-                                           description,
-                                           email,
-                                           mobile,
-                                           'https://www.w3schools.com/git/git_ignore.asp?remote=github')
-    result.Status = 100
-    result.Authority = "100"
-    if result.Status == 100:
-        return redirect('https://www.zarinpal.com/pg/StartPay/' + result.Authority)
+    request = {
+        "merchant_id": MMERCHANT_ID,
+        "amount": amount,
+        "callback_url": 'https://www.w3schools.com/git/git_ignore.asp?remote=github',
+        "description": description,
+        "metadata": {
+            "mobile": mobile,
+            "email": email
+        }
+    }
+    result = requests.post(url="https://api.zarinpal.com/pg/v4/payment/request.json",
+                           json=request
+                           )
+    if result.status_code == 200:
+        return result.json()['data']
+    else:
+        raise PaymentException()
+
+
+def verify(amount, authority):
+    request = {
+        "merchant_id": MMERCHANT_ID,
+        "amount": amount,
+        "authority": authority,
+    }
+    result = requests.post(url="https://api.zarinpal.com/pg/v4/payment/request.json",
+                           json=request
+                           )
+    if result.status_code == 200:
+        result = result.json()
     else:
         return 'Error'
 
-
-def verify(amount, request):
-    client = Client(ZARINPAL_WEBSERVICE)
-    if request.get('Status') == 'OK':
-        result = client.service.PaymentVerification(MMERCHANT_ID,
-                                                    request['Authority'],
-                                                    amount)
-        if result.Status == 100:
-            return 'Transaction success. RefID: ' + str(result.RefID)
-        elif result.Status == 101:
-            return 'Transaction submitted : ' + str(result.Status)
-        else:
-            return 'Transaction failed. Status: ' + str(result.Status)
+    if result['data']['code'] == 100:
+        return {"status": 100, 'RefID': str(result.RefID)}
+    elif result.Status == 101:
+        return {"status": 101, 'submitted': str(result.Status)}
     else:
-        return 'Transaction failed or canceled by user'
+        raise PaymentException()
 
 
 def update_event(mongo, data):
@@ -161,3 +169,12 @@ class PaymentFailed(UserInputError):
         super(PaymentFailed, self).__init__(message="Payment Failed ",
                                             error_code=error_code_base + 105,
                                             persian_massage="پرداخت ناموفق بود .")
+
+
+class PaymentException(UserInputError):
+    def __init__(self):
+        cfg_helper = ConfigHelper()
+        error_code_base = int(cfg_helper.get_config("CUSTOM_ERROR_CODES")["events"])
+        super(PaymentException, self).__init__(message="Payment exception ",
+                                               error_code=error_code_base + 106,
+                                               persian_massage="پرداخت ناموفق بود .")
