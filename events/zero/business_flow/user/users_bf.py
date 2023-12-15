@@ -43,7 +43,24 @@ class UserBusinessFlowManager(BusinessFlow):
                     item["image"] = self.serve_file(service.service_name, item["image"])
 
             results = {"total": total, "result": list(search_result)}
-        return {}
+
+        if method == "select_my_ticket":
+            sort = "DC_CREATE_TIME"
+            sort_type = 1
+            if "sort" in data:
+                sort = data["sort"]["name"]
+                sort_type = data["sort"]["type"]
+            from_value = int(data.get('from', 0))
+            to_value = int(data.get('to', 10))
+            data["memebr_id"] = member["_id"]
+            query = preprocess_schema(data, schema=service.registration_event_schema)
+            total = len(list(self.index_register.find(query)))
+
+            search_result = list(
+                self.index_register.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+
+            results = {"total": total, "result": list(search_result)}
+        return results
 
     def insert_business_flow(self, data, request, member, params=None):
         self.get_mongo_connection()

@@ -97,10 +97,11 @@ def verify(amount, authority):
     else:
         return 'Error'
 
-    if result['data']['code'] == 100:
-        return {"status": 100, 'RefID': str(result.RefID)}
-    elif result.Status == 101:
-        return {"status": 101, 'submitted': str(result.Status)}
+    if result['data'] not in ['null', None, []]:
+        if result['data']['code'] == 100:
+            return {"status": 100, 'RefID': str(result['data']['ref_id'])}
+        elif result['data']['code'] == 101:
+            return {"status": 101, 'submitted': str(result['data']['ref_id'])}
     else:
         raise PaymentException()
 
