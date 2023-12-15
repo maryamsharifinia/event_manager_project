@@ -62,8 +62,8 @@ def register_event(event_info, mongo_register_event, member, registration_event_
 
 def send_request(amount,
                  description,
-                 email,
-                 mobile, ):
+                 email=None,
+                 mobile=None, ):
     request = {
         "merchant_id": MMERCHANT_ID,
         "amount": amount,

@@ -7,8 +7,14 @@ from email.mime.text import MIMEText
 import smtplib
 from hashlib import sha256, md5
 from uuid import uuid4
+
+import requests
+
 from helpers.config_helper import ConfigHelper
 from helpers.io_helpers import MemberNotFoundError, UserInputError, RequiredFieldError
+
+MMERCHANT_ID = '1344b5d4-0048-11e8-94db-005056a205be'
+ZARINPAL_WEBSERVICE = 'https://www.zarinpal.com/pg/services/WebGate/wsdl'
 
 
 def get_member(mongo, request_sender_id):
@@ -671,6 +677,51 @@ def check_otp(type, data, db):
     return check_result
 
 
+def send_request(amount,
+                 description,
+                 email=None,
+                 mobile=None, ):
+    request = {
+        "merchant_id": MMERCHANT_ID,
+        "amount": amount,
+        "callback_url": 'https://www.w3schools.com/git/git_ignore.asp?remote=github',
+        "description": description,
+        "metadata": {
+            "mobile": mobile,
+            "email": email
+        }
+    }
+    result = requests.post(url="https://api.zarinpal.com/pg/v4/payment/request.json",
+                           json=request
+                           )
+    if result.status_code == 200:
+        return result.json()['data']
+    else:
+        raise PaymentException()
+
+
+def verify(amount, authority):
+    request = {
+        "merchant_id": MMERCHANT_ID,
+        "amount": amount,
+        "authority": authority,
+    }
+    result = requests.post(url="https://api.zarinpal.com/pg/v4/payment/request.json",
+                           json=request
+                           )
+    if result.status_code == 200:
+        result = result.json()
+    else:
+        return 'Error'
+    if result['data'] not in ['null', None, []]:
+        if result['data']['code'] == 100:
+            return {"status": 100, 'RefID': str(result['data']['ref_id'])}
+        elif result['data']['code'] == 101:
+            return {"status": 101, 'submitted': str(result['data']['ref_id'])}
+    else:
+        raise PaymentException()
+
+
 class IncorrectLoginData(UserInputError):
     def __init__(self, msg):
         cfg_helper = ConfigHelper()
@@ -714,3 +765,30 @@ class InvalidOtp(UserInputError):
                                          error_code=error_code_base + 106,
                                          persian_massage="کد وارد شده اشتباه وارد شده است."
                                          )
+
+
+class PaymentFailed(UserInputError):
+    def __init__(self):
+        cfg_helper = ConfigHelper()
+        error_code_base = int(cfg_helper.get_config("CUSTOM_ERROR_CODES")["members"])
+        super(PaymentFailed, self).__init__(message="Payment Failed ",
+                                            error_code=error_code_base + 107,
+                                            persian_massage="پرداخت ناموفق بود .")
+
+
+class PaymentException(UserInputError):
+    def __init__(self):
+        cfg_helper = ConfigHelper()
+        error_code_base = int(cfg_helper.get_config("CUSTOM_ERROR_CODES")["members"])
+        super(PaymentException, self).__init__(message="Payment exception ",
+                                               error_code=error_code_base + 108,
+                                               persian_massage="پرداخت ناموفق بود .")
+
+
+class DuplicatedCharge(UserInputError):
+    def __init__(self):
+        cfg_helper = ConfigHelper()
+        error_code_base = int(cfg_helper.get_config("CUSTOM_ERROR_CODES")["events"])
+        super(DuplicatedCharge, self).__init__(message="wallet is already charge ",
+                                               error_code=error_code_base + 109,
+                                               persian_massage="قبلا با این تراکنش حساب کاربری شارژ شده است  .")

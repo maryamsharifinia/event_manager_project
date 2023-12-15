@@ -12,6 +12,8 @@ class UserBusinessFlowManager(BusinessFlow):
         super(UserBusinessFlowManager, self).__init__(service.service_name)
         self.cfg_helper = ConfigHelper()
         self.index = self.create_index(self.cfg_helper.get_config(service.service_name)["index_name"])
+        self.index_transactions = self.create_index(
+            self.cfg_helper.get_config(service.service_name)["transactions_index_name"])
 
         redis_host = self.cfg_helper.get_config("REDIS")["redis_host"]
         redis_port = self.cfg_helper.get_config("REDIS")["redis_port"]
@@ -23,7 +25,7 @@ class UserBusinessFlowManager(BusinessFlow):
         self.get_mongo_connection()
 
         method = request["method"]
-
+        data = data['data']
         if method == "select":
             sort = "DC_CREATE_TIME"
             sort_type = 1
@@ -39,6 +41,21 @@ class UserBusinessFlowManager(BusinessFlow):
             search_result = list(self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
 
             results = {"total": total, "result": list(search_result)}
+        elif method == "select_my_payment":
+            sort = "DC_CREATE_TIME"
+            sort_type = 1
+            if "sort" in data:
+                sort = data["sort"]["name"]
+                sort_type = data["sort"]["type"]
+            from_value = int(data.get('from', 0))
+            to_value = int(data.get('to', 10))
+            data["member_id"] = member['_id']
+            query = preprocess_schema(data, schema=service.transaction_schema)
+            total = len(list(self.index_transactions.find(query)))
+
+            search_result = list(self.index_transactions.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+
+            results = {"total": total, "result": list(search_result)}
 
         return results
 
@@ -46,9 +63,45 @@ class UserBusinessFlowManager(BusinessFlow):
         self.get_mongo_connection()
         data = data['data']
         method = request["method"]
-        if method == "insert":
-            pass
-
+        if method == "charge_the_account":
+            check_required_key(["amount"], data)
+            amount = data["amount"]
+            mobile = member['phone']
+            email = member['email']
+            response = send_request(amount,
+                                    f" شارژ حساب کاربری به مبلغ {amount} ریال ",
+                                    email=email,
+                                    mobile=mobile, )
+            return {**response, "member_id": member["_id"]}
+        elif method == "verify_payment":
+            check_required_key(["amount", 'authority'], data)
+            _type = 'charge_wallet'
+            amount = data["amount"]
+            authority = data["authority"]
+            res = verify(amount, authority)
+            status = res['status']
+            if status == 100 or status == 101:
+                query = get_insert_check_query({
+                    "authority": authority,
+                    "type": _type,
+                    "payment": amount,
+                    "member_id": member["_id"]},
+                    service.transaction_schema)
+                if len(list(self.index_transactions.find(query))) != 0:
+                    raise DuplicatedCharge()
+                doc = check_full_schema({**member, "authority": authority,
+                                         "type": _type,
+                                         "payment": amount,
+                                         "member_id": member["_id"]}, service.transaction_schema)
+                doc = preprocess(doc, service.transaction_schema)
+                insert_response = self.index_transactions.insert_one(
+                    {**doc, "_id": doc['member_id'] + "_" + doc['authority']})
+                result = {"id": insert_response.inserted_id, "result": "inserted"}
+                myquery = {"_id": doc['member_id']}
+                wallet_balance = 0 if "wallet_balance" not in member else member["wallet_balance"]
+                newvalues = {"$set": {"wallet_balance": wallet_balance + int(amount)}}
+                self.index.update_one(myquery, newvalues)
+                return result
         else:
             raise PermissionError()
 
