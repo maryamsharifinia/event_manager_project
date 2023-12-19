@@ -61,6 +61,27 @@ class AdminBusinessFlowManager(BusinessFlow):
                     item["image"] = self.serve_file(service.service_name, item["image"])
 
             results = {"total": total, "result": list(search_result)}
+        elif method == 'select_my_event':
+
+            sort = "DC_CREATE_TIME"
+            sort_type = 1
+            if "sort" in data:
+                sort = data["sort"]["name"]
+                sort_type = data["sort"]["type"]
+            from_value = int(data.get('from', 0))
+            to_value = int(data.get('to', 10))
+            data["memebr_id"] = member["_id"]
+            query = preprocess_schema(data, schema=service.event_schema)
+            total = len(list(self.index.find(query)))
+
+            search_result = list(
+                self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+            for item in search_result:
+                if item["image"] not in ['null', None, "None"]:
+                    item["image"] = self.serve_file(service.service_name, item["image"])
+
+            results = {"total": total, "result": list(search_result)}
+
         else:
             raise PermissionError()
 
@@ -74,7 +95,7 @@ class AdminBusinessFlowManager(BusinessFlow):
         method = request["method"]
 
         if method == "insert_event":
-            check_required_key(["Name",
+            check_required_key(["name",
                                 "registration_start_date",
                                 "registration_end_date",
                                 "start_date",
@@ -95,6 +116,7 @@ class AdminBusinessFlowManager(BusinessFlow):
                 image_id = image_id.inserted_id
             else:
                 image_id = None
+            data['member_id'] = member["_id"]
             data = check_full_schema(data, service.event_schema)
             data = preprocess(data, schema=service.event_schema)
             data['image'] = image_id
@@ -102,7 +124,7 @@ class AdminBusinessFlowManager(BusinessFlow):
             self.index.insert_one({**data, "_id": member["_id"] + "@" + datetime.datetime.now().strftime(
                 "%Y%m%d_%H:%M:%S.%f")})
             results = {"status": "inserted_event"}
-        elif method == "selec_active":
+        elif method == "":
             pass
         else:
             raise PermissionError()
