@@ -24,6 +24,7 @@ class AdminBusinessFlowManager(BusinessFlow):
         self.get_mongo_connection()
 
         method = request["method"]
+        data = data['data']
 
         if method == "select_in_registration":
             sort = "DC_CREATE_TIME"
@@ -98,8 +99,8 @@ class AdminBusinessFlowManager(BusinessFlow):
             data = preprocess(data, schema=service.event_schema)
             data['image'] = image_id
 
-            self.index.insert_one({**data, "_id":  member["_id"] + "@" + datetime.datetime.now().strftime(
-                                                "%Y%m%d_%H:%M:%S.%f")})
+            self.index.insert_one({**data, "_id": member["_id"] + "@" + datetime.datetime.now().strftime(
+                "%Y%m%d_%H:%M:%S.%f")})
             results = {"status": "inserted_event"}
         elif method == "selec_active":
             pass
