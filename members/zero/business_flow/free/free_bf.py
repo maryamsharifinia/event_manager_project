@@ -1,10 +1,11 @@
+import uuid
 from hashlib import md5
 import members as service
 from helpers.business_flow_helpers import BusinessFlow
-
+import random
 from helpers.io_helpers import *
 from members.zero.utils.utils import *
-
+from walrus import *
 
 class FreeBusinessFlowManager(BusinessFlow):
     def __init__(self, ):
@@ -14,6 +15,11 @@ class FreeBusinessFlowManager(BusinessFlow):
 
         self.index = self.create_index(self.cfg_helper.get_config(service.service_name)["index_name"])
 
+        redis_host = self.cfg_helper.get_config("REDIS")["redis_host"]
+        redis_port = self.cfg_helper.get_config("REDIS")["redis_port"]
+        redis_db_number = self.cfg_helper.get_config("REDIS")["redis_db_number"]
+
+        self.db = Database(redis_host, redis_port, redis_db_number)
     def select_business_flow(self, data, request, member, params=None):
         self.get_mongo_connection()
 
@@ -80,12 +86,12 @@ class FreeBusinessFlowManager(BusinessFlow):
             result = change_password(data, member, self.index)
 
 
-        elif request["method"] == "check_otp_email":
-            if "otp" not in data.keys():
-                raise RequiredFieldError("otp")
+        elif request["method"] == "check_verification_code_email":
+            if "verification_code" not in data.keys():
+                raise RequiredFieldError("verification_code")
             elif "email" not in data.keys():
                 raise RequiredFieldError("email")
-            result = check_otp("email", data, self.db)
+            result = check_verification_code("email", data, self.db)
             if result["check"]:
                 doc = {"_id": member["_id"],
                        "verify_email": "TRUE",
@@ -93,17 +99,17 @@ class FreeBusinessFlowManager(BusinessFlow):
                        }
                 result = update_member(mongo=self.index, data=doc)
             else:
-                raise InvalidOtp()
+                raise InvalidVerificationCode()
 
 
         elif request["method"] == "verify_email":
-            otp_catch = self.db.cache("otp")
-            otp = random.randint(1000, 9999)
+            verification_code_catch = self.db.cache("otp_forget_password")
+            verification_code = random.randint(1000, 9999)
             _id = str(uuid.uuid4())
-            otp_catch.set(key=data["email"], timeout=20 * 60,
-                          value=json.dumps({"correct": otp}))
-            data["content"] = f'کد اعتبارسنجی شما :{otp}'
-            send_email(data, "اعتبارسنجی ایمیل")
+            verification_code_catch.set(key=data["email"], timeout=20 * 60,
+                          value=json.dumps({"correct": verification_code}))
+            data["content"] = f'کد اعتبارسنجی شما :{verification_code}'
+            return send_email(data, "اعتبارسنجی ایمیل")
 
 
         else:

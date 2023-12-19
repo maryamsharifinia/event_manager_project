@@ -43,7 +43,25 @@ class UserBusinessFlowManager(BusinessFlow):
                     item["image"] = self.serve_file(service.service_name, item["image"])
 
             results = {"total": total, "result": list(search_result)}
+
+
+        elif method == "select_ticket":
+            query = {"person_id": member["id"]}
+            tickets = list(self.tickets_collection.find(query))
+            # Process the retrieved tickets as needed
+            results = {"result": tickets}
+
+
+        elif method == "select_all_events":
+            query = {"person_id": member["id"]}
+            events = list(self.events_collection.find(query))
+            # Process the retrieved events as needed
+            results = {"result": events}
+
         return {}
+
+
+
 
     def insert_business_flow(self, data, request, member, params=None):
         self.get_mongo_connection()
