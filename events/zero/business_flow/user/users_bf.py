@@ -7,6 +7,7 @@ from helpers.config_helper import ConfigHelper
 
 import events as service
 from helpers.io_helpers import *
+from members import transaction_schema
 
 
 class UserBusinessFlowManager(BusinessFlow):
@@ -18,11 +19,10 @@ class UserBusinessFlowManager(BusinessFlow):
         self.index_register = self.create_index(
             self.cfg_helper.get_config(service.service_name)["index_name_register_event"])
 
+        self.index_transactions = self.create_index(self.cfg_helper.get_config("MEMBERS")["transactions_index_name"])
+
     def select_business_flow(self, data, request, member, params=None):
         self.get_mongo_connection()
-
-        method = request["method"]
-
         method = request["method"]
         data = data["data"]
         if method == "select_event":
@@ -43,7 +43,24 @@ class UserBusinessFlowManager(BusinessFlow):
                     item["image"] = self.serve_file(service.service_name, item["image"])
 
             results = {"total": total, "result": list(search_result)}
-        return {}
+
+        if method == "select_my_ticket":
+            sort = "DC_CREATE_TIME"
+            sort_type = 1
+            if "sort" in data:
+                sort = data["sort"]["name"]
+                sort_type = data["sort"]["type"]
+            from_value = int(data.get('from', 0))
+            to_value = int(data.get('to', 10))
+            data["memebr_id"] = member["_id"]
+            query = preprocess_schema(data, schema=service.registration_event_schema)
+            total = len(list(self.index_register.find(query)))
+
+            search_result = list(
+                self.index_register.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+
+            results = {"total": total, "result": list(search_result)}
+        return results
 
     def insert_business_flow(self, data, request, member, params=None):
         self.get_mongo_connection()
@@ -93,7 +110,9 @@ class UserBusinessFlowManager(BusinessFlow):
             return register_event
 
         elif method == "verify_payment":
+            check_required_key(["_id", 'authority'], data)
             event_id = data['_id']
+            authority = data['authority']
             event_info = get_event_by_id(self.mongo, event_id)
             ticket_types = json.loads(event_info['ticket_type'])
             ticket_type = "1" if "ticket_type" not in data.keys() else data["ticket_type"]
@@ -105,7 +124,7 @@ class UserBusinessFlowManager(BusinessFlow):
 
             cost = ticket_types[ticket_type]['cost']
 
-            res = verify(cost, data['authority'])
+            res = verify(cost, authority)
             status = res['status']
             if status == 100 or status == 101:
                 query = get_insert_check_query({"event_id": event_id, "member_id": member["_id"]},
@@ -114,11 +133,21 @@ class UserBusinessFlowManager(BusinessFlow):
                     raise DuplicatedRegister()
                 register_event = reg(event_info=event_info, mongo_register_event=self.index_register,
                                      member=member, registration_event_schema=service.registration_event_schema)
+                # update members
                 register_event = {**register_event, **res}
                 myquery = {"_id": event_id}
                 ticket_types[ticket_type]['participants'] += 1
                 newvalues = {"$set": {"ticket_type": ticket_types}}
                 self.index.update_one(myquery, newvalues)
+
+                # insert transaction
+                _type = 'register_event'
+                doc = check_full_schema({**member, "authority": authority,
+                                         "type": _type,
+                                         "payment": cost,
+                                         "member_id": member["_id"]}, transaction_schema)
+                doc = preprocess(doc, transaction_schema)
+                self.index_transactions.insert_one({**doc, "_id": doc['member_id'] + "_" + doc['authority']})
             else:
                 raise PaymentFailed()
             return register_event

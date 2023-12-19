@@ -15,6 +15,7 @@ clubmembers_schema = {
     "phone": {"_type": str, "_null_value": "null", "_check_in_insert": True},
     "email": {"_type": str, "_null_value": "null", "_check_in_insert": False},
     "verify_email": {"_type": str, "_null_value": "FALSE", "_check_in_insert": False},
+    "wallet_balance": {"_type": int, "_null_value": 0, "_check_in_insert": False},
     "verify_phone": {"_type": str, "_null_value": "FALSE", "_check_in_insert": False},
     "registration_date": {"_type": str, "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS",
                           "_null_value": "1970/01/01 00:00:00.000000",
@@ -22,6 +23,19 @@ clubmembers_schema = {
     "birth_date": {"_type": str, "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS",
                    "_null_value": "1970/01/01 00:00:00.000000",
                    "_check_in_insert": False},
+    "DC_CREATE_TIME": {"_type": str, "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS",
+                       "_null_value": "1970/01/01 00:00:00.000000",
+                       "_check_in_insert": False},
+}
+transaction_schema = {
+    "first_name": {"_type": str, "_null_value": "null", "_check_in_insert": False},
+    "last_name": {"_type": str, "_null_value": "null", "_check_in_insert": False},
+    "member_id": {"_type": str, "_null_value": "null", "_check_in_insert": True},
+
+    "authority": {"_type": str, "_null_value": "null", "_check_in_insert": True},
+    "payment": {"_type": int, "_null_value": 0, "_check_in_insert": True},
+    "type": {"_type": str, "_null_value": "null", "_check_in_insert": True},
+
     "DC_CREATE_TIME": {"_type": str, "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS",
                        "_null_value": "1970/01/01 00:00:00.000000",
                        "_check_in_insert": False},
