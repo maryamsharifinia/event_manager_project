@@ -82,6 +82,27 @@ class AdminBusinessFlowManager(BusinessFlow):
 
             results = {"total": total, "result": list(search_result)}
 
+
+        elif method == 'select_all_admins_event':
+            sort = "DC_CREATE_TIME"
+            sort_type = 1
+            if "sort" in data:
+                sort = data["sort"]["name"]
+                sort_type = data["sort"]["type"]
+            from_value = int(data.get('from', 0))
+            to_value = int(data.get('to', 10))
+            data["memebr_id"] = member["_id"]
+            query = preprocess_schema(data, schema=service.event_schema)
+            total = len(list(self.index.find(query)))
+            search_result = list(
+                self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+            for item in search_result:
+                if item["image"] not in ['null', None, "None"]:
+                    item["image"] = self.serve_file(service.service_name, item["image"])
+
+            results = {"total": total, "result": list(search_result)}
+
+
         else:
             raise PermissionError()
 
