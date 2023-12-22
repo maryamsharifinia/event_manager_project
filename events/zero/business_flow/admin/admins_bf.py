@@ -91,7 +91,6 @@ class AdminBusinessFlowManager(BusinessFlow):
                 sort_type = data["sort"]["type"]
             from_value = int(data.get('from', 0))
             to_value = int(data.get('to', 10))
-            data["memebr_id"] = member["_id"]
             query = preprocess_schema(data, schema=service.event_schema)
             total = len(list(self.index.find(query)))
             search_result = list(

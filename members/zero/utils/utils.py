@@ -766,25 +766,29 @@ class InvalidOtp(UserInputError):
                                          persian_massage="کد وارد شده اشتباه وارد شده است."
                                          )
 
-def check_verification_code(type, data, db):
-    verification_code_cache = db.cache("verification_code")
+
+def check_verification_code(type, data, db, verification_code):
+    verification_code_cache = db.cache("otp_forget_password")
     check_result = {"check": False}
     cache_data = verification_code_cache.get(data.get(type))
     if str(cache_data) in ["", "None", "null"]:
         return check_result
     correct = json.loads(str(cache_data))
-    if int(correct["correct"]) == int(data["otp"]):
+    if int(correct["correct"]) == int(verification_code):
         check_result["check"] = True
     return check_result
+
 
 class InvalidVerificationCode(UserInputError):
     def __init__(self):
         cfg_helper = ConfigHelper()
         error_code_base = int(cfg_helper.get_config("CUSTOM_ERROR_CODES")["members"])
-        super(InvalidOtp, self).__init__(message="invalid otp",
-                                         error_code=error_code_base + 106,
-                                         persian_massage="کد وارد شده اشتباه وارد شده است."
-                                         )
+        super(InvalidVerificationCode, self).__init__(message="invalid otp",
+                                                      error_code=error_code_base + 106,
+                                                      persian_massage="کد وارد شده اشتباه وارد شده است."
+                                                      )
+
+
 class PaymentFailed(UserInputError):
     def __init__(self):
         cfg_helper = ConfigHelper()
@@ -810,3 +814,12 @@ class DuplicatedCharge(UserInputError):
         super(DuplicatedCharge, self).__init__(message="wallet is already charge ",
                                                error_code=error_code_base + 109,
                                                persian_massage="قبلا با این تراکنش حساب کاربری شارژ شده است  .")
+
+
+class NotExistMember(UserInputError):
+    def __init__(self):
+        cfg_helper = ConfigHelper()
+        error_code_base = int(cfg_helper.get_config("CUSTOM_ERROR_CODES")["members"])
+        super(NotExistMember, self).__init__(message="Member is not exist ",
+                                             error_code=error_code_base + 110,
+                                             persian_massage="کاربری با این مشخصات وجود ندارد.")
