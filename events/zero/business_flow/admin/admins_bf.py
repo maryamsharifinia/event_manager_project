@@ -16,6 +16,8 @@ class AdminBusinessFlowManager(BusinessFlow):
 
         self.cfg_helper = ConfigHelper()
         self.index = self.create_index(self.cfg_helper.get_config(service.service_name)["index_name"])
+        self.index_name_discount_code = self.create_index(
+            self.cfg_helper.get_config(service.service_name)["index_name_discount_code"])
         self.index_register = self.create_index(
             self.cfg_helper.get_config(service.service_name)["index_name_register_event"])
 
@@ -82,7 +84,6 @@ class AdminBusinessFlowManager(BusinessFlow):
 
             results = {"total": total, "result": list(search_result)}
 
-
         elif method == 'select_all_admins_event':
             sort = "DC_CREATE_TIME"
             sort_type = 1
@@ -101,11 +102,25 @@ class AdminBusinessFlowManager(BusinessFlow):
 
             results = {"total": total, "result": list(search_result)}
 
+        elif method == 'select_discount_code':
+            sort = "DC_CREATE_TIME"
+            sort_type = 1
+            if "sort" in data:
+                sort = data["sort"]["name"]
+                sort_type = data["sort"]["type"]
+            from_value = int(data.get('from', 0))
+            to_value = int(data.get('to', 10))
+
+            query = preprocess_schema(data, schema=service.discount_code_schema)
+            total = len(list(self.index_name_discount_code.find(query)))
+
+            search_result = list(
+                self.index_name_discount_code.find().skip(from_value).limit(to_value - from_value).sort(sort,
+                                                                                                        sort_type))
+
 
         else:
             raise PermissionError()
-
-        results = []
 
         return {"results": results}
 
@@ -144,8 +159,28 @@ class AdminBusinessFlowManager(BusinessFlow):
             self.index.insert_one({**data, "_id": member["_id"] + "@" + datetime.datetime.now().strftime(
                 "%Y%m%d_%H:%M:%S.%f")})
             results = {"status": "inserted_event"}
-        elif method == "":
-            pass
+        elif method == "insert_discount_code":
+            check_required_key(["discount_code",
+                                "event_id"
+                                "number_of_use",
+                                "ticket_type",
+                                "start_date",
+                                "end_date",
+                                "how_apply", ], data)
+            query = get_insert_check_query(data, service.discount_code_schema)
+            event = list(self.index.find({'_id': data['event_id']}))
+            if len(event) != 0:
+                raise InvalidInputField("event_id")
+            if len(list(self.index_name_discount_code.find(query))) != 0:
+                raise DuplicatedDiscountCode()
+
+            data = check_full_schema(data, service.event_schema)
+            data = preprocess(data, schema=service.event_schema)
+
+            self.index_name_discount_code.insert_one(
+                {**data, "_id": member["_id"] + "@" + datetime.datetime.now().strftime(
+                    "%Y%m%d_%H:%M:%S.%f")})
+            results = {"status": "inserted_event"}
         else:
             raise PermissionError()
 
