@@ -49,3 +49,25 @@ registration_event_schema = {
                        "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS",
                        "_check_in_insert": False},
 }
+
+discount_code_schema = {
+    "broker_type": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": False},
+    "discount_code": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": True},
+    "number_of_use": {"type": "keyword", "_type": int, "_null_value": 0, "_check_in_insert": False},
+    "how_apply": {"type": "keyword", "_type": str, "_null_value": {"percentage": 0, "amount": 0},
+                  "_check_in_insert": True},
+    "event_id": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": True},
+    "event_name": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": False},
+    "members": {"type": "keyword", "_type": list, "_null_value": [], "_check_in_insert": False},
+    "registration_date": {"type": "date", "_type": str, "_null_value": "1970/01/01 00:00:00.000000",
+                          "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS", "_check_in_insert": False},
+    "is_active": {"type": "keyword", "_type": str, "_null_value": "FALSE", "_check_in_insert": False},
+    "ticket_type": {"type": "keyword", "_type": list, "_null_value": [], "_check_in_insert": False},
+    "start_date": {"_type": str, "_null_value": "1970/01/01 00:00:00.000000",
+                   "_check_in_insert": False},
+    "end_date": {"_type": str, "_null_value": "1970/01/01 00:00:00.000000",
+                 "_check_in_insert": False},
+    "DC_CREATE_TIME": {"type": "date", "_type": str, "_null_value": "1970/01/01 00:00:00.000000",
+                       "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS",
+                       "_check_in_insert": False},
+}
