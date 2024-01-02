@@ -93,8 +93,7 @@ class AdminBusinessFlowManager(BusinessFlow):
             to_value = int(data.get('to', 10))
             query = preprocess_schema(data, schema=service.event_schema)
             total = len(list(self.index.find(query)))
-            search_result = list(
-                self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+            search_result = list(self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
             for item in search_result:
                 if item["image"] not in ['null', None, "None"]:
                     item["image"] = self.serve_file(service.service_name, item["image"])
@@ -105,7 +104,6 @@ class AdminBusinessFlowManager(BusinessFlow):
         else:
             raise PermissionError()
 
-        results = []
 
         return {"results": results}
 
@@ -166,13 +164,11 @@ class AdminBusinessFlowManager(BusinessFlow):
                                             member["_id"] + "@" + datetime.datetime.now().strftime(
                                                 "%Y%m%d_%H:%M:%S.%f"))
                 image_id = image_id.inserted_id
-            else:
-                image_id = None
+                data['image'] = image_id
 
-            data['image'] = image_id
 
             check_schema(data, service.event_schema)
             data = preprocess(data, schema=service.event_schema)
 
-            result = update_event(data, member)
+            result = update_event(self.index, data)
             return result

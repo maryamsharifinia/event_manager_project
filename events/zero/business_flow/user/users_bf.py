@@ -1,3 +1,4 @@
+import datetime
 import json
 
 from events.zero.utils.utils import *
@@ -98,6 +99,12 @@ class UserBusinessFlowManager(BusinessFlow):
 
             if ticket_types[ticket_type]['participants'] >= ticket_types[ticket_type]['max_participants']:
                 raise CapacityError()
+
+            now = datetime.datetime.now()
+            start_time = datetime.datetime.strptime(event_info['registration_start_date'], "%Y/%m/%d %H:%M:%S.%f")
+            end_time = datetime.datetime.strptime(event_info['registration_start_date'],  "%Y/%m/%d %H:%M:%S.%f")
+            if now > end_time or now < start_time:
+                raise PermissionError()
 
             cost = ticket_types[ticket_type]['cost']
 

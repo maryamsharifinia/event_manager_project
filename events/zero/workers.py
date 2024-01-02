@@ -272,7 +272,7 @@ class EventsUpdateWorker(EventsWorker):
                                              source=request["source"],
                                              member_id=request["member_id"])
 
-        return json.dumps(response)
+        return response
 
     def business_flow(self, data, request):
         request_sender_id = request["member_id"]
