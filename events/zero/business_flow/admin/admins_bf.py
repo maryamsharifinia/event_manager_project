@@ -84,7 +84,6 @@ class AdminBusinessFlowManager(BusinessFlow):
 
             results = {"total": total, "result": list(search_result)}
 
-
         elif method == 'select_all_admins_event':
             sort = "DC_CREATE_TIME"
             sort_type = 1
