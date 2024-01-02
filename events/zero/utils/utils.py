@@ -179,10 +179,30 @@ class PaymentException(UserInputError):
         super(PaymentException, self).__init__(message="Payment exception ",
                                                error_code=error_code_base + 106,
                                                persian_massage="پرداخت ناموفق بود .")
+
+
 class DuplicatedDiscountCode(UserInputError):
     def __init__(self):
         cfg_helper = ConfigHelper()
         error_code_base = int(cfg_helper.get_config("CUSTOM_ERROR_CODES")["events"])
-        super(DuplicatedDiscountCode, self).__init__(message="Member is already exist ",
-                                              error_code=error_code_base + 107,
-                                              persian_massage="کد تخفیفی با این مشخصات وجود دارد.")
+        super(DuplicatedDiscountCode, self).__init__(message="discountcode is already exist ",
+                                                     error_code=error_code_base + 107,
+                                                     persian_massage="کد تخفیفی با این مشخصات وجود دارد.")
+
+
+class InvalidDiscountCode(UserInputError):
+    def __init__(self):
+        cfg_helper = ConfigHelper()
+        error_code_base = int(cfg_helper.get_config("CUSTOM_ERROR_CODES")["events"])
+        super(InvalidDiscountCode, self).__init__(message="discountcode is not exist ",
+                                                  error_code=error_code_base + 108,
+                                                  persian_massage="کد تخفیفی با این مشخصات وجود ندارد.")
+
+
+class CapacityDiscountCode(UserInputError):
+    def __init__(self):
+        cfg_helper = ConfigHelper()
+        error_code_base = int(cfg_helper.get_config("CUSTOM_ERROR_CODES")["events"])
+        super(CapacityDiscountCode, self).__init__(message="discount code doesn't have capacity ",
+                                                   error_code=error_code_base + 109,
+                                                   persian_massage="ظرفیت کد تخفیف تمام شده است.")

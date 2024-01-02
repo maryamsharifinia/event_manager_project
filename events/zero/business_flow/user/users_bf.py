@@ -21,6 +21,8 @@ class UserBusinessFlowManager(BusinessFlow):
             self.cfg_helper.get_config(service.service_name)["index_name_register_event"])
 
         self.index_transactions = self.create_index(self.cfg_helper.get_config("MEMBERS")["transactions_index_name"])
+        self.index_name_discount_code = self.create_index(
+            self.cfg_helper.get_config(service.service_name)["index_name_discount_code"])
 
     def select_business_flow(self, data, request, member, params=None):
         self.get_mongo_connection()
@@ -44,14 +46,11 @@ class UserBusinessFlowManager(BusinessFlow):
                     item["image"] = self.serve_file(service.service_name, item["image"])
 
             results = {"total": total, "result": list(search_result)}
-
         elif method == "select_ticket":
             query = {"person_id": member["id"]}
             tickets = list(self.tickets_collection.find(query))
             # Process the retrieved tickets as needed
             results = {"result": tickets}
-
-
         elif method == "select_all_events":
             query = {"person_id": member["id"]}
             events = list(self.events_collection.find(query))
@@ -102,11 +101,28 @@ class UserBusinessFlowManager(BusinessFlow):
 
             now = datetime.datetime.now()
             start_time = datetime.datetime.strptime(event_info['registration_start_date'], "%Y/%m/%d %H:%M:%S.%f")
-            end_time = datetime.datetime.strptime(event_info['registration_start_date'],  "%Y/%m/%d %H:%M:%S.%f")
+            end_time = datetime.datetime.strptime(event_info['registration_start_date'], "%Y/%m/%d %H:%M:%S.%f")
             if now > end_time or now < start_time:
                 raise PermissionError()
 
-            cost = ticket_types[ticket_type]['cost']
+            if "discount_code" in data:
+                discount_code = data['discount_code']
+                discount_code_data = list(
+                    self.index_name_discount_code.find({"discount_code": discount_code, "event_id": event_id}))
+                if len(discount_code_data) == 0:
+                    raise InvalidDiscountCode()
+                if len(discount_code_data[0]['members']) >= discount_code_data[0]['number_of_use']:
+                    raise CapacityDiscountCode()
+                start_time = datetime.datetime.strptime(discount_code_data[0]['start_date'], "%Y/%m/%d %H:%M:%S.%f")
+                end_time = datetime.datetime.strptime(discount_code_data[0]['start_date'], "%Y/%m/%d %H:%M:%S.%f")
+                if now > end_time or now < start_time:
+                    raise PermissionError()
+                cost = ticket_types[ticket_type]['cost'] * (
+                        (100 - discount_code_data[0]['how_apply']['percentage']) / 100) - \
+                       discount_code_data[0]['how_apply']['amount']
+                event_info['discount_code'] = discount_code
+            else:
+                cost = ticket_types[ticket_type]['cost']
 
             name = event_info['name']
             mobile = member['phone']
@@ -120,12 +136,20 @@ class UserBusinessFlowManager(BusinessFlow):
 
 
             else:
+
                 register_event = reg(event_info=event_info, mongo_register_event=self.index_register,
                                      member=member, registration_event_schema=service.registration_event_schema)
+
                 myquery = {"_id": event_id}
                 ticket_types[ticket_type]['participants'] += 1
                 newvalues = {"$set": {"ticket_type": ticket_types}}
                 self.index.update_one(myquery, newvalues)
+                if "discount_code" in data:
+                    myquery = {"_id": discount_code_data[0]["_id"]}
+                    discount_code_data[0]['members'].append(member["_id"])
+                    newvalues = {"$set": {"members": discount_code_data[0]['members']}}
+                    self.index_name_discount_code.update_one(myquery, newvalues)
+
             return register_event
 
         elif method == "verify_payment":
@@ -141,7 +165,17 @@ class UserBusinessFlowManager(BusinessFlow):
             if ticket_types[ticket_type]['participants'] >= ticket_types[ticket_type]['max_participants']:
                 raise CapacityError()
 
-            cost = ticket_types[ticket_type]['cost']
+            if "discount_code" in data:
+                discount_code = data['discount_code']
+                discount_code_data = list(
+                    self.index_name_discount_code.find({"discount_code": discount_code, "event_id": event_id}))
+
+                cost = ticket_types[ticket_type]['cost'] * (
+                        (100 - discount_code_data[0]['how_apply']['percentage']) / 100) - \
+                       discount_code_data[0]['how_apply']['amount']
+                event_info['discount_code'] = discount_code
+            else:
+                cost = ticket_types[ticket_type]['cost']
 
             res = verify(cost, authority)
             status = res['status']
@@ -167,6 +201,13 @@ class UserBusinessFlowManager(BusinessFlow):
                                          "member_id": member["_id"]}, transaction_schema)
                 doc = preprocess(doc, transaction_schema)
                 self.index_transactions.insert_one({**doc, "_id": doc['member_id'] + "_" + doc['authority']})
+
+                # update discount_code
+                if "discount_code" in data:
+                    myquery = {"_id": discount_code_data[0]["_id"]}
+                    discount_code_data[0]['members'].append(member["_id"])
+                    newvalues = {"$set": {"members": discount_code_data[0]['members']}}
+                    self.index_name_discount_code.update_one(myquery, newvalues)
             else:
                 raise PaymentFailed()
             return register_event

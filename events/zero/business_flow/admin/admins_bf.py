@@ -118,7 +118,7 @@ class AdminBusinessFlowManager(BusinessFlow):
                 self.index_name_discount_code.find().skip(from_value).limit(to_value - from_value).sort(sort,
                                                                                                         sort_type))
 
-
+            results = {"total": total, "result": list(search_result)}
         else:
             raise PermissionError()
 
@@ -161,7 +161,7 @@ class AdminBusinessFlowManager(BusinessFlow):
             results = {"status": "inserted_event"}
         elif method == "insert_discount_code":
             check_required_key(["discount_code",
-                                "event_id"
+                                "event_id",
                                 "number_of_use",
                                 "ticket_type",
                                 "start_date",
@@ -169,18 +169,18 @@ class AdminBusinessFlowManager(BusinessFlow):
                                 "how_apply", ], data)
             query = get_insert_check_query(data, service.discount_code_schema)
             event = list(self.index.find({'_id': data['event_id']}))
-            if len(event) != 0:
+            if len(event) == 0:
                 raise InvalidInputField("event_id")
             if len(list(self.index_name_discount_code.find(query))) != 0:
                 raise DuplicatedDiscountCode()
-
-            data = check_full_schema(data, service.event_schema)
-            data = preprocess(data, schema=service.event_schema)
+            data['event_name'] = event[0]['name']
+            data = check_full_schema(data, service.discount_code_schema)
+            data = preprocess(data, schema=service.discount_code_schema)
 
             self.index_name_discount_code.insert_one(
                 {**data, "_id": member["_id"] + "@" + datetime.datetime.now().strftime(
                     "%Y%m%d_%H:%M:%S.%f")})
-            results = {"status": "inserted_event"}
+            results = {"status": "inserted_discount_code"}
         else:
             raise PermissionError()
 
@@ -202,7 +202,6 @@ class AdminBusinessFlowManager(BusinessFlow):
                                                 "%Y%m%d_%H:%M:%S.%f"))
                 image_id = image_id.inserted_id
                 data['image'] = image_id
-
 
             check_schema(data, service.event_schema)
             data = preprocess(data, schema=service.event_schema)
