@@ -70,3 +70,21 @@ discount_code_schema = {
                        "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS",
                        "_check_in_insert": False},
 }
+
+emails_schema = {
+    "broker_type": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": False},
+    "send_time": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": False},
+    "content": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": False},
+    "event_id": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": True},
+    "event_name": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": False},
+    "member_id": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": False},
+    "is_active": {"type": "keyword", "_type": bool, "_null_value": False, "_check_in_insert": False},
+    "receivers": {"type": "keyword", "_type": str, "_null_value": "event_participants", "_check_in_insert": True},
+    "status": {"type": "keyword", "_type": str, "_null_value": "undone", "_check_in_insert": True},
+    "send_date": {"_type": str, "_null_value": "1970/01/01 00:00:00.000000",
+                   "_check_in_insert": False},
+
+    "DC_CREATE_TIME": {"type": "date", "_type": str, "_null_value": "1970/01/01 00:00:00.000000",
+                       "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS",
+                       "_check_in_insert": False},
+}

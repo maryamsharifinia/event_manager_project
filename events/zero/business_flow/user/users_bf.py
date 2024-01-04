@@ -101,9 +101,9 @@ class UserBusinessFlowManager(BusinessFlow):
 
             now = datetime.datetime.now()
             start_time = datetime.datetime.strptime(event_info['registration_start_date'], "%Y/%m/%d %H:%M:%S.%f")
-            end_time = datetime.datetime.strptime(event_info['registration_start_date'], "%Y/%m/%d %H:%M:%S.%f")
+            end_time = datetime.datetime.strptime(event_info['registration_end_date'], "%Y/%m/%d %H:%M:%S.%f")
             if now > end_time or now < start_time:
-                raise PermissionError()
+                raise FinishTime()
 
             if "discount_code" in data:
                 discount_code = data['discount_code']
@@ -114,9 +114,9 @@ class UserBusinessFlowManager(BusinessFlow):
                 if len(discount_code_data[0]['members']) >= discount_code_data[0]['number_of_use']:
                     raise CapacityDiscountCode()
                 start_time = datetime.datetime.strptime(discount_code_data[0]['start_date'], "%Y/%m/%d %H:%M:%S.%f")
-                end_time = datetime.datetime.strptime(discount_code_data[0]['start_date'], "%Y/%m/%d %H:%M:%S.%f")
+                end_time = datetime.datetime.strptime(discount_code_data[0]['end_date'], "%Y/%m/%d %H:%M:%S.%f")
                 if now > end_time or now < start_time:
-                    raise PermissionError()
+                    raise FinishTime()
                 cost = ticket_types[ticket_type]['cost'] * (
                         (100 - discount_code_data[0]['how_apply']['percentage']) / 100) - \
                        discount_code_data[0]['how_apply']['amount']

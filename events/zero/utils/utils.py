@@ -206,3 +206,12 @@ class CapacityDiscountCode(UserInputError):
         super(CapacityDiscountCode, self).__init__(message="discount code doesn't have capacity ",
                                                    error_code=error_code_base + 109,
                                                    persian_massage="ظرفیت کد تخفیف تمام شده است.")
+
+
+class FinishTime(UserInputError):
+    def __init__(self):
+        cfg_helper = ConfigHelper()
+        error_code_base = int(cfg_helper.get_config("CUSTOM_ERROR_CODES")["events"])
+        super(FinishTime, self).__init__(message="registration time was finished",
+                                         error_code=error_code_base + 109,
+                                         persian_massage="زمان ثبت نام تمام شده است.")

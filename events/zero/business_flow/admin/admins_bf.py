@@ -20,6 +20,8 @@ class AdminBusinessFlowManager(BusinessFlow):
             self.cfg_helper.get_config(service.service_name)["index_name_discount_code"])
         self.index_register = self.create_index(
             self.cfg_helper.get_config(service.service_name)["index_name_register_event"])
+        self.index_name_emails = self.create_index(
+            self.cfg_helper.get_config(service.service_name)["index_name_emails"])
 
     # noinspection PyUnusedLocal
     def select_business_flow(self, data, request, member, params=None):
@@ -119,6 +121,8 @@ class AdminBusinessFlowManager(BusinessFlow):
                                                                                                         sort_type))
 
             results = {"total": total, "result": list(search_result)}
+
+
         else:
             raise PermissionError()
 
@@ -181,6 +185,38 @@ class AdminBusinessFlowManager(BusinessFlow):
                 {**data, "_id": member["_id"] + "@" + datetime.datetime.now().strftime(
                     "%Y%m%d_%H:%M:%S.%f")})
             results = {"status": "inserted_discount_code"}
+        elif method == "add_email_schedule":
+            check_required_key(["event_id",
+                                "receivers",
+                                "content",
+                                "send_time"
+                                ], data)
+            if data['send_time'] == 'select_date':
+                check_required_key(['send_date'
+                                    ], data)
+            elif data['send_time'] == 'now' or data['send_time'] == 'before_event':
+                pass
+            else:
+                raise InvalidInputField("send_time")
+
+            if data['receivers'] != 'event_participants' and data['receivers'] != 'below_one':
+                raise InvalidInputField('receivers')
+
+            query = get_insert_check_query(data, service.emails_schema)
+            event = list(self.index.find({'_id': data['event_id']}))
+            if len(event) == 0:
+                raise InvalidInputField("event_id")
+            if len(list(self.index_name_emails.find(query))) != 0:
+                raise DuplicatedDiscountCode()
+            data['event_name'] = event[0]['name']
+            data['member_id'] = member['_id']
+            data = check_full_schema(data, service.emails_schema)
+            data = preprocess(data, schema=service.emails_schema)
+
+            self.index_name_emails.insert_one(
+                {**data, "_id": member["_id"] + "@" + datetime.datetime.now().strftime(
+                    "%Y%m%d_%H:%M:%S.%f")})
+            results = {"status": "inserted_email_schedule"}
         else:
             raise PermissionError()
 
