@@ -19,6 +19,9 @@ class UserBusinessFlowManager(BusinessFlow):
         self.index_register = self.create_index(
             self.cfg_helper.get_config(service.service_name)["index_name_register_event"])
 
+        self.index_comment = self.create_index(
+            self.cfg_helper.get_config(service.service_name)["index_name_comments"])
+
         self.index_transactions = self.create_index(self.cfg_helper.get_config("MEMBERS")["transactions_index_name"])
 
     def select_business_flow(self, data, request, member, params=None):
@@ -72,6 +75,24 @@ class UserBusinessFlowManager(BusinessFlow):
                 self.index_register.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
 
             results = {"total": total, "result": list(search_result)}
+
+
+        if method == "select_events_comment":
+            sort = "DC_CREATE_TIME"
+            sort_type = 1
+            if "sort" in data:
+                sort = data["sort"]["name"]
+                sort_type = data["sort"]["type"]
+            from_value = int(data.get('from', 0))
+            to_value = int(data.get('to', 10))
+            data["event_id"] = events["_id"]
+            query = preprocess_schema(data, schema=service.comment_event_schema)
+            total = len(list(self.index_register.find(query)))
+            search_result = list(
+                self.index_register.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+            results = {"total": total, "result": list(search_result)}
+
+
         return results
 
     def insert_business_flow(self, data, request, member, params=None):
@@ -111,7 +132,6 @@ class UserBusinessFlowManager(BusinessFlow):
                                     email=email,
                                     mobile=mobile)
 
-
             else:
                 register_event = reg(event_info=event_info, mongo_register_event=self.index_register,
                                      member=member, registration_event_schema=service.registration_event_schema)
@@ -120,6 +140,15 @@ class UserBusinessFlowManager(BusinessFlow):
                 newvalues = {"$set": {"ticket_type": ticket_types}}
                 self.index.update_one(myquery, newvalues)
             return register_event
+
+        elif method == "insert_comment":
+            comment = {
+                "event_id": data['event_id'],
+                "member_id": data['member_id'],
+                "text_comment": data['comment']
+            }
+            inserted_comment = self.index_comment.insert_one(comment)
+            return inserted_comment.inserted_id
 
         elif method == "verify_payment":
             check_required_key(["_id", 'authority'], data)

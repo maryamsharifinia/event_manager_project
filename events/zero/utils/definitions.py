@@ -49,3 +49,10 @@ registration_event_schema = {
                        "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS",
                        "_check_in_insert": False},
 }
+
+
+comment_event_schema = {
+    "member_id": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": True},
+    "event_id": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": True},
+    "comment": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": False},
+}
