@@ -764,7 +764,32 @@ class InvalidOtp(UserInputError):
         super(InvalidOtp, self).__init__(message="invalid otp",
                                          error_code=error_code_base + 106,
                                          persian_massage="کد وارد شده اشتباه وارد شده است."
-                                         )
+
+def change_wallet_balance(data, member, mongo):
+    if member["_id"] != data["member_id"]:
+        raise PermissionError()
+
+    update_result = set_new_wallet_balance(new_balance=data["new_balance"], member_id=member["_id"],
+                                                   mongo=mongo)
+    result = {"id": update_result["_id"], "result": update_result["result"]}
+    return result
+
+def set_new_wallet_balance(wallet_balance, payment_cost, member_id, mongo):
+
+    if wallet_balance < payment_cost:
+        raise ValueError("Insufficient wallet balance for payment")
+
+    update_body = {
+          "wallet_balance": wallet_balance - payment_cost
+    }
+    myquery = {"_id": member_id}
+    newvalues = {"$set": {**update_body}}
+
+    update_result = mongo.update_one(myquery, newvalues)
+
+    update_result = {"_id": member_id, "result": update_result.raw_result}
+    return update_result
+
 
 
 def check_verification_code(type, data, db, verification_code):
