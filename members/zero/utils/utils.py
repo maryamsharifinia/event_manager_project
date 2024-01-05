@@ -764,6 +764,7 @@ class InvalidOtp(UserInputError):
         super(InvalidOtp, self).__init__(message="invalid otp",
                                          error_code=error_code_base + 106,
                                          persian_massage="کد وارد شده اشتباه وارد شده است."
+                                         )
 
 def change_wallet_balance(data, member, mongo):
     if member["_id"] != data["member_id"]:
