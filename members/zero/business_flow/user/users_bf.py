@@ -149,6 +149,12 @@ class UserBusinessFlowManager(BusinessFlow):
             else:
                 raise InvalidOtp()
 
+
+
+        elif request["method"] == "update_wallet":
+            result = change_wallet_balance(data, member, self.index)
+
+
         else:
             raise PermissionError()
 
