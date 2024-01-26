@@ -38,7 +38,7 @@ class FreeBusinessFlowManager(BusinessFlow):
         data = data['data']
 
         if request["method"] == "register":
-            check_required_key(['password_confirm', 'password', "user", "phone","email"], data)
+            check_required_key(['password_confirm', 'password', "user", "phone", "email"], data)
             data["phone"] = (data["phone"]).replace(" ", "")
             data["email"] = data["email"]
             new_pass = data["password"]
@@ -54,6 +54,10 @@ class FreeBusinessFlowManager(BusinessFlow):
 
             data = check_full_schema(data, service.clubmembers_schema)
             data = preprocess(data, schema=service.clubmembers_schema)
+
+            if len(list(self.index.find({"user": data["user"]}))) != 0:
+                raise DuplicatedMember()
+
             query = get_insert_check_query(data, service.clubmembers_schema)
             if len(list(self.index.find(query))) != 0:
                 raise DuplicatedMember()
@@ -70,7 +74,6 @@ class FreeBusinessFlowManager(BusinessFlow):
         raise PermissionError()
 
     def update_business_flow(self, data, request, member, params=None):
-
 
         self.get_mongo_connection()
         result = {}
@@ -107,7 +110,7 @@ class FreeBusinessFlowManager(BusinessFlow):
             verification_code = random.randint(1000, 9999)
             _id = str(uuid.uuid4())
             verification_code_catch.set(key=data["email"], timeout=20 * 60,
-                          value=json.dumps({"correct": verification_code}))
+                                        value=json.dumps({"correct": verification_code}))
             data["content"] = f'کد اعتبارسنجی شما :{verification_code}'
             return send_email(data, "اعتبارسنجی ایمیل")
 

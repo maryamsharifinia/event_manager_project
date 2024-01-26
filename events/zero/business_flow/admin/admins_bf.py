@@ -60,9 +60,6 @@ class AdminBusinessFlowManager(BusinessFlow):
 
             search_result = list(
                 self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
-            for item in search_result:
-                if item["image"] not in ['null', None, "None"]:
-                    item["image"] = self.serve_file(service.service_name, item["image"])
 
             results = {"total": total, "result": list(search_result)}
         elif method == 'select_my_event':
@@ -80,9 +77,6 @@ class AdminBusinessFlowManager(BusinessFlow):
 
             search_result = list(
                 self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
-            for item in search_result:
-                if item["image"] not in ['null', None, "None"]:
-                    item["image"] = self.serve_file(service.service_name, item["image"])
 
             results = {"total": total, "result": list(search_result)}
 
@@ -98,9 +92,6 @@ class AdminBusinessFlowManager(BusinessFlow):
             total = len(list(self.index.find(query)))
             search_result = list(
                 self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
-            for item in search_result:
-                if item["image"] not in ['null', None, "None"]:
-                    item["image"] = self.serve_file(service.service_name, item["image"])
 
             results = {"total": total, "result": list(search_result)}
 

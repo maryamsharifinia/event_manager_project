@@ -9,9 +9,11 @@ CherryPy-based webservice daemon with background threads
 
 from __future__ import print_function
 
+import base64
 import threading
 import importlib
 import cherrypy
+import pymongo
 from cherrypy.process import plugins
 import cherrypy_cors
 from marshmallow import Schema, fields
@@ -144,7 +146,7 @@ def execute_request(index, method_type, method, order_data, ip, api_key, token, 
     if config_key not in cfg_helper.config.keys():
         raise InvalidInputException("TABLE", index)
 
-    source = authenticate( api_key)
+    source = authenticate(api_key)
     if source is None:
         raise NotAuthenticatedException()
 
@@ -253,7 +255,7 @@ class NodesController(object): \
                 cache_token = _cache.get(str(member_id))
                 if cache_token is None:
                     _cache.set(str(member_id), json.dumps({"token": token, "member_type": member_type,
-                                                      "permitted_methods": permitted_methods}), ttl)
+                                                           "permitted_methods": permitted_methods}), ttl)
                 else:
                     cache_token = json.loads(cache_token)
                     response["data"]["token"] = cache_token["token"]
@@ -588,6 +590,27 @@ def cors():
         cherrypy.response.headers['Access-Control-Allow-Origin'] = '*'
 
 
+class ImageService:
+
+    @cherrypy.expose
+    def index(self):
+        return "Welcome to the Image Service!"
+
+    @cherrypy.expose
+    def get_image(self, image_id):
+        mongo = pymongo.MongoClient("mongodb://localhost:27017/").myclient["EVENTS"]
+        mydb = mongo['files']
+        mycol = mydb["EVENTS"]
+        myquery = {"_id": image_id}
+        result = list(mycol.find(myquery))[0]
+
+        if len(result) != 0:
+            cherrypy.response.headers['Content-Type'] = f'image/{result["type"]}'
+            return base64.b64decode(result["file_content"][23:])
+        else:
+            return "Image not found."
+
+
 if __name__ == '__main__':
     ports = list(sys.argv)
     # ports=[80,5000]
@@ -633,7 +656,12 @@ if __name__ == '__main__':
                        action='logout',
                        controller=NodesController(),
                        conditions={'method': ['POST']})
-
+    image_service = ImageService()
+    dispatcher.connect(name='get_image',
+                       route='/StudentScientificSociety/get_image/:image_id',
+                       action='get_image',
+                       controller=image_service,
+                       conditions={'method': ['GET']})
     config = {
 
         '/': {
