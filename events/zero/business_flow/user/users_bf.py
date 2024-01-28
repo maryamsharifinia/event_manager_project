@@ -43,7 +43,8 @@ class UserBusinessFlowManager(BusinessFlow):
             query = preprocess_schema(data, schema=service.event_schema)
             total = len(list(self.index.find(query)))
 
-            search_result = list(self.index.find(query).skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+            search_result = list(
+                self.index.find(query).skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
 
             results = {"total": total, "result": list(search_result)}
         elif method == "select_ticket":
@@ -101,19 +102,16 @@ class UserBusinessFlowManager(BusinessFlow):
             event_id = data['_id']
             event_info = get_event_by_id(self.mongo, event_id)
             ticket_types = event_info['ticket_type']
+            ticket_type = {"1": 1} if "ticket_type" not in data.keys() else data["ticket_type"]
 
-            query = get_insert_check_query({"event_id": event_id, "member_id": member["_id"]},
-                                           service.registration_event_schema)
-            if len(list(self.index_register.find(query))) != 0:
-                raise DuplicatedRegister()
+            for i in list(ticket_type.keys()):
+                if "participants" not in ticket_types[i]:
+                    ticket_types[i]['participants'] = 0
+                capacity = int(ticket_types[i]['max_participants'])
+                available_capacity = capacity - int(ticket_types[i]['participants'])
 
-            ticket_type = "1" if "ticket_type" not in data.keys() else data["ticket_type"]
-
-            if "participants" not in ticket_types[ticket_type]:
-                ticket_types[ticket_type]['participants'] = 0
-
-            if int(ticket_types[ticket_type]['participants']) >= int(ticket_types[ticket_type]['max_participants']):
-                raise CapacityError()
+                if ticket_type[i] > available_capacity:
+                    raise CapacityError()
 
             now = datetime.datetime.now()
             start_time = datetime.datetime.strptime(event_info['registration_start_date'], "%Y/%m/%d %H:%M:%S")
@@ -133,12 +131,17 @@ class UserBusinessFlowManager(BusinessFlow):
                 end_time = datetime.datetime.strptime(discount_code_data[0]['end_date'], "%Y/%m/%d %H:%M:%S.%f")
                 if now > end_time or now < start_time:
                     raise FinishTime()
-                cost = ticket_types[ticket_type]['cost'] * (
-                        (100 - discount_code_data[0]['how_apply']['percentage']) / 100) - \
-                       discount_code_data[0]['how_apply']['amount']
+                cost = 0
+                for i in list(ticket_type.keys()):
+                    cost += (int(ticket_types[i]['cost']) * (
+                            (100 - discount_code_data[0]['how_apply']['percentage']) / 100)) * ticket_type[i]
+
+                cost -= int(discount_code_data[0]['how_apply']['amount'])
                 event_info['discount_code'] = discount_code
             else:
-                cost = int(ticket_types[ticket_type]['cost'])
+                cost = 0
+                for i in list(ticket_type.keys()):
+                    cost += int(ticket_types[i]['cost']) * ticket_type[i]
 
             name = event_info['name']
             mobile = member['phone']
@@ -153,10 +156,12 @@ class UserBusinessFlowManager(BusinessFlow):
             else:
 
                 register_event = reg(event_info=event_info, mongo_register_event=self.index_register,
-                                     member=member, registration_event_schema=service.registration_event_schema)
+                                     member=member, registration_event_schema=service.registration_event_schema,
+                                     ticket_type=ticket_type)
 
                 myquery = {"_id": event_id}
-                ticket_types[ticket_type]['participants'] += 1
+                for i in list(ticket_type.keys()):
+                    ticket_types[i]['participants'] += ticket_type[i]
                 newvalues = {"$set": {"ticket_type": ticket_types}}
                 self.index.update_one(myquery, newvalues)
                 if "discount_code" in data:
@@ -182,24 +187,33 @@ class UserBusinessFlowManager(BusinessFlow):
             authority = data['authority']
             event_info = get_event_by_id(self.mongo, event_id)
             ticket_types = json.loads(event_info['ticket_type'])
-            ticket_type = "1" if "ticket_type" not in data.keys() else data["ticket_type"]
+            ticket_type = {"1": 1} if "ticket_type" not in data.keys() else data["ticket_type"]
 
-            if "participants" not in ticket_types[ticket_type]:
-                ticket_types[ticket_type]['participants'] = 0
-            if ticket_types[ticket_type]['participants'] >= ticket_types[ticket_type]['max_participants']:
-                raise CapacityError()
+            for i in list(ticket_type.keys()):
+                if "participants" not in ticket_types[i]:
+                    ticket_types[i]['participants'] = 0
+                capacity = int(ticket_types[i]['max_participants'])
+                available_capacity = capacity - int(ticket_types[i]['participants'])
+
+                if ticket_type[i] > available_capacity:
+                    raise CapacityError()
 
             if "discount_code" in data:
                 discount_code = data['discount_code']
                 discount_code_data = list(
                     self.index_name_discount_code.find({"discount_code": discount_code, "event_id": event_id}))
 
-                cost = ticket_types[ticket_type]['cost'] * (
-                        (100 - discount_code_data[0]['how_apply']['percentage']) / 100) - \
-                       discount_code_data[0]['how_apply']['amount']
+                cost = 0
+                for i in list(ticket_type.keys()):
+                    cost += (int(ticket_types[i]['cost']) * (
+                            (100 - discount_code_data[0]['how_apply']['percentage']) / 100)) * ticket_type[i]
+
+                cost -= int(discount_code_data[0]['how_apply']['amount'])
                 event_info['discount_code'] = discount_code
             else:
-                cost = ticket_types[ticket_type]['cost']
+                cost = 0
+                for i in list(ticket_type.keys()):
+                    cost += int(ticket_types[i]['cost']) * ticket_type[i]
 
             res = verify(cost, authority)
             status = res['status']
@@ -209,7 +223,8 @@ class UserBusinessFlowManager(BusinessFlow):
                 if len(list(self.index_register.find(query))) != 0:
                     raise DuplicatedRegister()
                 register_event = reg(event_info=event_info, mongo_register_event=self.index_register,
-                                     member=member, registration_event_schema=service.registration_event_schema)
+                                     member=member, registration_event_schema=service.registration_event_schema,
+                                     ticket_type=ticket_type)
                 # update members
                 register_event = {**register_event, **res}
                 myquery = {"_id": event_id}

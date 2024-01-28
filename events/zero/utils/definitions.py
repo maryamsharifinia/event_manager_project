@@ -42,10 +42,11 @@ registration_event_schema = {
     "first_name": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": False},
     "last_name": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": False},
     "national_id": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": False},
+    "ticket_type": {"type": "keyword", "_type": dict, "_null_value": {"1": 1}, "_check_in_insert": False},
     "registration_date": {"type": "date", "_type": str, "_null_value": "1970/01/01 00:00:00.000000",
                           "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS", "_check_in_insert": False},
     "status": {"type": "keyword", "_type": str, "_null_value": "SUBMITTED", "_check_in_insert": False},
-"discount_code": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert":False},
+    "discount_code": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": False},
     "DC_CREATE_TIME": {"type": "date", "_type": str, "_null_value": "1970/01/01 00:00:00.000000",
                        "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS",
                        "_check_in_insert": False},
@@ -82,13 +83,12 @@ emails_schema = {
     "receivers": {"type": "keyword", "_type": str, "_null_value": "event_participants", "_check_in_insert": True},
     "status": {"type": "keyword", "_type": str, "_null_value": "undone", "_check_in_insert": True},
     "send_date": {"_type": str, "_null_value": "1970/01/01 00:00:00.000000",
-                   "_check_in_insert": False},
+                  "_check_in_insert": False},
 
     "DC_CREATE_TIME": {"type": "date", "_type": str, "_null_value": "1970/01/01 00:00:00.000000",
                        "format": "8yyyy/MM/dd HH:mm:ss.SSSSSS",
                        "_check_in_insert": False},
 }
-
 
 comment_event_schema = {
     "member_id": {"type": "keyword", "_type": str, "_null_value": "null", "_check_in_insert": True},

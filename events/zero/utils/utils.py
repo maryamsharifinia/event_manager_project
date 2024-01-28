@@ -37,7 +37,7 @@ def get_event_by_id(mongo, event_id):
     return search_result[0]
 
 
-def register_event(event_info, mongo_register_event, member, registration_event_schema):
+def register_event(event_info, mongo_register_event, member, registration_event_schema, ticket_type):
     query = {
         "member_id": member["_id"],
         "event_id": event_info["_id"],
@@ -46,12 +46,21 @@ def register_event(event_info, mongo_register_event, member, registration_event_
     search_result = list(mongo_register_event.find(query))
 
     if len(search_result) != 0:
-        raise DuplicatedRegister()
+        current_ticket_type = search_result[0]['ticket_type']
+        for i in list(ticket_type.keys()):
+            current_ticket_type[i] += ticket_type[i]
+        myquery = {"_id": search_result[0]["_id"]}
+        newvalues = {"$set": {"ticket_type": current_ticket_type}}
+        mongo_register_event.update_one(myquery, newvalues)
+        result = {"id": search_result[0]["_id"], "result": "updated"}
+        return result
+
     data = check_full_schema({**event_info, **member}, registration_event_schema)
     data['event_id'] = event_info['_id']
     data['event_name'] = event_info['name']
     data['member_id'] = member['_id']
     data['status'] = "SUBMITTED"
+    data['ticket_type'] = ticket_type
     data = preprocess(data, registration_event_schema)
     res = mongo_register_event.insert_one({**data, "_id": data['member_id'] + "_" + data['event_id']})
 
