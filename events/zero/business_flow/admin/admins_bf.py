@@ -43,7 +43,7 @@ class AdminBusinessFlowManager(BusinessFlow):
             total = len(list(self.index_register.find(query)))
 
             search_result = list(
-                self.index_register.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+                self.index_register.find(query).skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
 
             results = {"total": total, "result": list(search_result)}
         elif method == "select_in_events":
@@ -59,7 +59,7 @@ class AdminBusinessFlowManager(BusinessFlow):
             total = len(list(self.index.find(query)))
 
             search_result = list(
-                self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+                self.index.find(query).skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
 
             results = {"total": total, "result": list(search_result)}
         elif method == 'select_my_event':
@@ -76,7 +76,7 @@ class AdminBusinessFlowManager(BusinessFlow):
             total = len(list(self.index.find(query)))
 
             search_result = list(
-                self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+                self.index.find(query).skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
 
             results = {"total": total, "result": list(search_result)}
 
@@ -91,7 +91,7 @@ class AdminBusinessFlowManager(BusinessFlow):
             query = preprocess_schema(data, schema=service.event_schema)
             total = len(list(self.index.find(query)))
             search_result = list(
-                self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+                self.index.find(query).skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
 
             results = {"total": total, "result": list(search_result)}
 
@@ -108,7 +108,7 @@ class AdminBusinessFlowManager(BusinessFlow):
             total = len(list(self.index_name_discount_code.find(query)))
 
             search_result = list(
-                self.index_name_discount_code.find().skip(from_value).limit(to_value - from_value).sort(sort,
+                self.index_name_discount_code.find(query).skip(from_value).limit(to_value - from_value).sort(sort,
                                                                                                         sort_type))
 
             results = {"total": total, "result": list(search_result)}

@@ -53,7 +53,7 @@ class UserBusinessFlowManager(BusinessFlow):
             query = preprocess_schema(data, schema=service.transaction_schema)
             total = len(list(self.index_transactions.find(query)))
 
-            search_result = list(self.index_transactions.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+            search_result = list(self.index_transactions.find(query).skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
 
             results = {"total": total, "result": list(search_result)}
 
