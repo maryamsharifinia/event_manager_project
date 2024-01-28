@@ -43,8 +43,7 @@ class UserBusinessFlowManager(BusinessFlow):
             query = preprocess_schema(data, schema=service.event_schema)
             total = len(list(self.index.find(query)))
 
-            search_result = list(self.index.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
-
+            search_result = list(self.index.find(query).skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
 
             results = {"total": total, "result": list(search_result)}
         elif method == "select_ticket":
@@ -74,7 +73,6 @@ class UserBusinessFlowManager(BusinessFlow):
 
             results = {"total": total, "result": list(search_result)}
 
-
         if method == "select_events_comment":
             sort = "DC_CREATE_TIME"
             sort_type = 1
@@ -89,7 +87,6 @@ class UserBusinessFlowManager(BusinessFlow):
             search_result = list(
                 self.index_register.find().skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
             results = {"total": total, "result": list(search_result)}
-
 
         return results
 
@@ -115,12 +112,12 @@ class UserBusinessFlowManager(BusinessFlow):
             if "participants" not in ticket_types[ticket_type]:
                 ticket_types[ticket_type]['participants'] = 0
 
-            if ticket_types[ticket_type]['participants'] >= ticket_types[ticket_type]['max_participants']:
+            if int(ticket_types[ticket_type]['participants']) >= int(ticket_types[ticket_type]['max_participants']):
                 raise CapacityError()
 
             now = datetime.datetime.now()
-            start_time = datetime.datetime.strptime(event_info['registration_start_date'], "%Y/%m/%d %H:%M:%S.%f")
-            end_time = datetime.datetime.strptime(event_info['registration_end_date'], "%Y/%m/%d %H:%M:%S.%f")
+            start_time = datetime.datetime.strptime(event_info['registration_start_date'], "%Y/%m/%d %H:%M:%S")
+            end_time = datetime.datetime.strptime(event_info['registration_end_date'], "%Y/%m/%d %H:%M:%S")
             if now > end_time or now < start_time:
                 raise FinishTime()
 
@@ -141,7 +138,7 @@ class UserBusinessFlowManager(BusinessFlow):
                        discount_code_data[0]['how_apply']['amount']
                 event_info['discount_code'] = discount_code
             else:
-                cost = ticket_types[ticket_type]['cost']
+                cost = int(ticket_types[ticket_type]['cost'])
 
             name = event_info['name']
             mobile = member['phone']
