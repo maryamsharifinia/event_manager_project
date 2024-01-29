@@ -98,7 +98,7 @@ def verify(amount, authority):
         "amount": amount,
         "authority": authority,
     }
-    result = requests.post(url="https://api.zarinpal.com/pg/v4/payment/request.json",
+    result = requests.post(url="https://api.zarinpal.com/pg/v4/payment/verify.json",
                            json=request
                            )
     if result.status_code == 200:

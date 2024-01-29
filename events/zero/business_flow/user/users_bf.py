@@ -186,7 +186,7 @@ class UserBusinessFlowManager(BusinessFlow):
             event_id = data['_id']
             authority = data['authority']
             event_info = get_event_by_id(self.mongo, event_id)
-            ticket_types = json.loads(event_info['ticket_type'])
+            ticket_types =event_info['ticket_type']
             ticket_type = {"1": 1} if "ticket_type" not in data.keys() else data["ticket_type"]
 
             for i in list(ticket_type.keys()):
