@@ -57,7 +57,7 @@ class UserBusinessFlowManager(BusinessFlow):
             events = list(self.events_collection.find(query))
             # Process the retrieved events as needed
             results = {"result": events}
-        if method == "select_my_ticket":
+        elif method == "select_my_ticket":
             sort = "DC_CREATE_TIME"
             sort_type = 1
             if "sort" in data:
@@ -74,7 +74,7 @@ class UserBusinessFlowManager(BusinessFlow):
 
             results = {"total": total, "result": list(search_result)}
 
-        if method == "select_events_comment":
+        elif method == "select_events_comment":
             sort = "DC_CREATE_TIME"
             sort_type = 1
             if "sort" in data:
@@ -87,7 +87,25 @@ class UserBusinessFlowManager(BusinessFlow):
             search_result = list(
                 self.index_comment.find(query).skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
             results = {"total": total, "result": list(search_result)}
+        elif method == 'select_discount_code':
+            check_required_key(["event_id",
+                                "discount_code"], data)
+            sort = "DC_CREATE_TIME"
+            sort_type = 1
+            if "sort" in data:
+                sort = data["sort"]["name"]
+                sort_type = data["sort"]["type"]
+            from_value = int(data.get('from', 0))
+            to_value = int(data.get('to', 10))
 
+            query = preprocess_schema(data, schema=service.discount_code_schema)
+            total = len(list(self.index_name_discount_code.find(query)))
+
+            search_result = list(
+                self.index_name_discount_code.find(query).skip(from_value).limit(to_value - from_value).sort(sort,
+                                                                                                        sort_type))
+
+            results = {"total": total, "result": list(search_result)}
         return results
 
     def insert_business_flow(self, data, request, member, params=None):
@@ -172,13 +190,17 @@ class UserBusinessFlowManager(BusinessFlow):
             return register_event
 
         elif method == "insert_comment":
+            get_event_by_id(self.mongo, data['event_id'])
             comment = {
                 "event_id": data['event_id'],
-                "member_id": data['member_id'],
+                "member_id": member['_id'],
                 "text_comment": data['comment']
             }
             inserted_comment = self.index_comment.insert_one(comment)
-            return inserted_comment.inserted_id
+            if inserted_comment.acknowledged:
+                return {"status":"inserted"}
+            else:
+                return {"status": "not_inserted"}
 
         elif method == "verify_payment":
             check_required_key(["_id", 'authority'], data)

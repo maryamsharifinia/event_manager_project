@@ -76,7 +76,7 @@ def send_request(amount,
     request = {
         "merchant_id": MMERCHANT_ID,
         "amount": amount,
-        "callback_url": 'https://www.w3schools.com/git/git_ignore.asp?remote=github',
+        "callback_url": 'https://www.mongard.ir/accounts/purchase/verify',
         "description": description,
         "metadata": {
             "mobile": mobile,
