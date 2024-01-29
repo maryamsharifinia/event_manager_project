@@ -82,11 +82,10 @@ class UserBusinessFlowManager(BusinessFlow):
                 sort_type = data["sort"]["type"]
             from_value = int(data.get('from', 0))
             to_value = int(data.get('to', 10))
-            data["event_id"] = events["_id"]
             query = preprocess_schema(data, schema=service.comment_event_schema)
-            total = len(list(self.index_register.find(query)))
+            total = len(list(self.index_comment.find(query)))
             search_result = list(
-                self.index_register.find(query).skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
+                self.index_comment.find(query).skip(from_value).limit(to_value - from_value).sort(sort, sort_type))
             results = {"total": total, "result": list(search_result)}
 
         return results
