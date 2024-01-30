@@ -77,6 +77,7 @@ class UserBusinessFlowManager(BusinessFlow):
         if method == "select_events_comment":
             sort = "DC_CREATE_TIME"
             sort_type = 1
+            data["member_id"] = member["_id"]
             if "sort" in data:
                 sort = data["sort"]["name"]
                 sort_type = data["sort"]["type"]
