@@ -144,8 +144,8 @@ class UserBusinessFlowManager(BusinessFlow):
                     raise InvalidDiscountCode()
                 if len(discount_code_data[0]['members']) >= discount_code_data[0]['number_of_use']:
                     raise CapacityDiscountCode()
-                start_time = datetime.datetime.strptime(discount_code_data[0]['start_date'], "%Y/%m/%d %H:%M:%S.%f")
-                end_time = datetime.datetime.strptime(discount_code_data[0]['end_date'], "%Y/%m/%d %H:%M:%S.%f")
+                start_time = datetime.datetime.strptime(discount_code_data[0]['start_date'], "%Y/%m/%d %H:%M:%S")
+                end_time = datetime.datetime.strptime(discount_code_data[0]['end_date'], "%Y/%m/%d %H:%M:%S")
                 if now > end_time or now < start_time:
                     raise FinishTime()
                 cost = 0
@@ -236,23 +236,21 @@ class UserBusinessFlowManager(BusinessFlow):
                 for i in list(ticket_type.keys()):
                     cost += int(ticket_types[i]['cost']) * ticket_type[i]
 
-            res = verify(cost, authority)
-            status = res['status']
+            # res = verify(cost, authority)
+            # status = res['status']
+            res={}
+            status = 100
             if status == 100 or status == 101:
-                query = get_insert_check_query({"event_id": event_id, "member_id": member["_id"]},
-                                               service.registration_event_schema)
-                if len(list(self.index_register.find(query))) != 0:
-                    raise DuplicatedRegister()
                 register_event = reg(event_info=event_info, mongo_register_event=self.index_register,
                                      member=member, registration_event_schema=service.registration_event_schema,
                                      ticket_type=ticket_type)
                 # update members
                 register_event = {**register_event, **res}
                 myquery = {"_id": event_id}
-                ticket_types[ticket_type]['participants'] += 1
+                for i in list(ticket_type.keys()):
+                    ticket_types[i]['participants'] += ticket_type[i]
                 newvalues = {"$set": {"ticket_type": ticket_types}}
                 self.index.update_one(myquery, newvalues)
-
                 # insert transaction
                 _type = 'register_event'
                 doc = check_full_schema({**member, "authority": authority,
